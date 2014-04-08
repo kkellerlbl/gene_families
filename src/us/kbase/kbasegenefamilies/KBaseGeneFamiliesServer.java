@@ -28,14 +28,44 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
      * <p>Original spec-file function name: search_domains</p>
      * <pre>
      * </pre>
-     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams} (original type "search_domains_params")
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams}
      * @return   parameter "job_id" of String
      */
     @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains")
-    public String searchDomains(SearchDomainsParams input, AuthToken authPart) throws Exception {
+    public String searchDomains(SearchDomainsParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN search_domains
         //END search_domains
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: construct_domain_clusters</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.ConstructDomainClustersParams ConstructDomainClustersParams}
+     * @return   parameter "job_id" of String
+     */
+    @JsonServerMethod(rpc = "KBaseGeneFamilies.construct_domain_clusters")
+    public String constructDomainClusters(ConstructDomainClustersParams params, AuthToken authPart) throws Exception {
+        String returnVal = null;
+        //BEGIN construct_domain_clusters
+        //END construct_domain_clusters
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: search_domains_and_construct_clusters</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams SearchDomainsAndConstructClustersParams}
+     * @return   parameter "job_id" of String
+     */
+    @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains_and_construct_clusters")
+    public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params, AuthToken authPart) throws Exception {
+        String returnVal = null;
+        //BEGIN search_domains_and_construct_clusters
+        //END search_domains_and_construct_clusters
         return returnVal;
     }
 

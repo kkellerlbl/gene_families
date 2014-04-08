@@ -18,8 +18,8 @@ import us.kbase.common.service.Tuple5;
  * <p>Original spec-file type: DomainAnnotation</p>
  * <pre>
  * genome_ref genome - reference to genome
- * mapping<contig_id, list<tuple<string feature_id,int feature_start,int feature_stop,list<tuple<domain_model_ref,int start_in_feature,int stop_in_feature,float evalue,float bitscore>>>>> data - 
- *         list of entrances of different domains into proteins of this genome
+ * mapping<contig_id, list<domain_annotation_element>> data - 
+ *         list of entrances of different domains into proteins of annotated genome
  * </pre>
  * 
  */

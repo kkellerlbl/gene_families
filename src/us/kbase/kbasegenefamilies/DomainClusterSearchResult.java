@@ -12,14 +12,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: DomainSearchResult</p>
+ * <p>Original spec-file type: DomainClusterSearchResult</p>
  * <pre>
- * dsr_ref parent_ref - optional reference to parent domain clusters search results
+ * dcsr_ref parent_ref - optional reference to parent domain clusters search results
  * dms_ref used_dms_ref - domain models used for search
- * mapping<genome_ref, DomainAnnotation> annotations - found domains in genomes that user defined as input data for domain search
- * mapping<genome_ref, domain_annotation_ref> annotation_refs - domain annotation references in case we don't want to store it inside search result object
- * mapping<domain_model_ref, DomainCluster> domain_clusters - clusters constructed based on query_genomes plus genomes from parent object
- * mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs - references to clusters in case we don't want to store these clusters inside search result object
+ * mapping<genome_ref, DomainAnnotation> annotations - found domains in genomes that user 
+ *         defined as input data for domain search
+ * mapping<genome_ref, domain_annotation_ref> annotation_refs - domain annotation references 
+ *         in case we don't want to store it inside search result object
+ * mapping<domain_model_ref, DomainCluster> domain_clusters - clusters constructed based on 
+ *         query_genomes plus genomes from parent object
+ * mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs - references to clusters 
+ *         in case we don't want to store these clusters inside search result object
  * @optional parent_ref
  * @optional annotations
  * @optional annotation_refs
@@ -38,7 +42,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "domain_clusters",
     "domain_cluster_refs"
 })
-public class DomainSearchResult {
+public class DomainClusterSearchResult {
 
     @JsonProperty("parent_ref")
     private java.lang.String parentRef;
@@ -64,7 +68,7 @@ public class DomainSearchResult {
         this.parentRef = parentRef;
     }
 
-    public DomainSearchResult withParentRef(java.lang.String parentRef) {
+    public DomainClusterSearchResult withParentRef(java.lang.String parentRef) {
         this.parentRef = parentRef;
         return this;
     }
@@ -79,7 +83,7 @@ public class DomainSearchResult {
         this.usedDmsRef = usedDmsRef;
     }
 
-    public DomainSearchResult withUsedDmsRef(java.lang.String usedDmsRef) {
+    public DomainClusterSearchResult withUsedDmsRef(java.lang.String usedDmsRef) {
         this.usedDmsRef = usedDmsRef;
         return this;
     }
@@ -94,7 +98,7 @@ public class DomainSearchResult {
         this.annotations = annotations;
     }
 
-    public DomainSearchResult withAnnotations(Map<String, DomainAnnotation> annotations) {
+    public DomainClusterSearchResult withAnnotations(Map<String, DomainAnnotation> annotations) {
         this.annotations = annotations;
         return this;
     }
@@ -109,7 +113,7 @@ public class DomainSearchResult {
         this.annotationRefs = annotationRefs;
     }
 
-    public DomainSearchResult withAnnotationRefs(Map<String, String> annotationRefs) {
+    public DomainClusterSearchResult withAnnotationRefs(Map<String, String> annotationRefs) {
         this.annotationRefs = annotationRefs;
         return this;
     }
@@ -124,7 +128,7 @@ public class DomainSearchResult {
         this.domainClusters = domainClusters;
     }
 
-    public DomainSearchResult withDomainClusters(Map<String, DomainCluster> domainClusters) {
+    public DomainClusterSearchResult withDomainClusters(Map<String, DomainCluster> domainClusters) {
         this.domainClusters = domainClusters;
         return this;
     }
@@ -139,7 +143,7 @@ public class DomainSearchResult {
         this.domainClusterRefs = domainClusterRefs;
     }
 
-    public DomainSearchResult withDomainClusterRefs(Map<String, String> domainClusterRefs) {
+    public DomainClusterSearchResult withDomainClusterRefs(Map<String, String> domainClusterRefs) {
         this.domainClusterRefs = domainClusterRefs;
         return this;
     }
@@ -156,7 +160,7 @@ public class DomainSearchResult {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((("DomainSearchResult"+" [parentRef=")+ parentRef)+", usedDmsRef=")+ usedDmsRef)+", annotations=")+ annotations)+", annotationRefs=")+ annotationRefs)+", domainClusters=")+ domainClusters)+", domainClusterRefs=")+ domainClusterRefs)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("DomainClusterSearchResult"+" [parentRef=")+ parentRef)+", usedDmsRef=")+ usedDmsRef)+", annotations=")+ annotations)+", annotationRefs=")+ annotationRefs)+", domainClusters=")+ domainClusters)+", domainClusterRefs=")+ domainClusterRefs)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -17,9 +17,10 @@ import us.kbase.common.service.Tuple7;
  * <p>Original spec-file type: DomainCluster</p>
  * <pre>
  * domain_model_ref model - reference to domain model
- * domain_cluster_ref parent_ref - optional reference to parent cluster (containing data describing some common set of genomes)
- * mapping<genome_ref,list<tuple<string contig_id,string feature_id,int feature_list_pos,int number_of_copies,float best_evalue,
- *         float best_bitscore,string best_profile_alignment>>> data - list of entrances of this domain into different genomes
+ * domain_cluster_ref parent_ref - optional reference to parent cluster (containing data 
+ *         describing some common set of genomes)
+ * mapping<genome_ref,list<domain_cluster_element>> data - list of entrances of this domain 
+ *         into different genomes
  * @optional parent_ref
  * </pre>
  * 

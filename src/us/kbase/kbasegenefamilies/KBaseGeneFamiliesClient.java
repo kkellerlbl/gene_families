@@ -59,16 +59,50 @@ public class KBaseGeneFamiliesClient {
      * <p>Original spec-file function name: search_domains</p>
      * <pre>
      * </pre>
-     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams} (original type "search_domains_params")
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams}
      * @return   parameter "job_id" of String
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
-    public String searchDomains(SearchDomainsParams input) throws IOException, JsonClientException {
+    public String searchDomains(SearchDomainsParams params) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
-        args.add(input);
+        args.add(params);
         TypeReference<List<String>> retType = new TypeReference<List<String>>() {};
         List<String> res = caller.jsonrpcCall("KBaseGeneFamilies.search_domains", args, retType, true, true);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: construct_domain_clusters</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.ConstructDomainClustersParams ConstructDomainClustersParams}
+     * @return   parameter "job_id" of String
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public String constructDomainClusters(ConstructDomainClustersParams params) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<String>> retType = new TypeReference<List<String>>() {};
+        List<String> res = caller.jsonrpcCall("KBaseGeneFamilies.construct_domain_clusters", args, retType, true, true);
+        return res.get(0);
+    }
+
+    /**
+     * <p>Original spec-file function name: search_domains_and_construct_clusters</p>
+     * <pre>
+     * </pre>
+     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams SearchDomainsAndConstructClustersParams}
+     * @return   parameter "job_id" of String
+     * @throws IOException if an IO exception occurs
+     * @throws JsonClientException if a JSON RPC exception occurs
+     */
+    public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params) throws IOException, JsonClientException {
+        List<Object> args = new ArrayList<Object>();
+        args.add(params);
+        TypeReference<List<String>> retType = new TypeReference<List<String>>() {};
+        List<String> res = caller.jsonrpcCall("KBaseGeneFamilies.search_domains_and_construct_clusters", args, retType, true, true);
         return res.get(0);
     }
 }

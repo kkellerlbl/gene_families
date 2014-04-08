@@ -13,87 +13,52 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: search_domains_params</p>
+ * <p>Original spec-file type: SearchDomainsParams</p>
  * <pre>
- * list<genome_ref> genomes - genome list
- * dms_ref dms_ref - set of domain models that will be searched in defined genomes (optional field, you can use clusters_for_extension instead)
- * dsr_ref clusters_for_extension - clusters already constructed for another set of genomes (public ones for example)
- * list<string> domain_types - type list (if empty list all types are used) defining subset of domain models extracted from dms_ref/clusters_for_extension
+ * genome_ref genome - genome for domain annotation process
+ * dms_ref dms_ref - set of domain models that will be searched in defined genome
+ * list<string> domain_types - type list (if empty list all types are used) defining subset 
+ *         of domain models extracted from dms_ref
  * string out_workspace - output workspace
- * string out_result_id - id of resulting object of type DomainSearchResult
- * int is_genome_annotation_stored_outside - default value is 0
- * string genome_annotation_id_prefix - used for genome domain annotation objects id generation ([prefix.]genome_name[.suffix])
- * string genome_annotation_id_suffix - used for genome domain annotation objects id generation ([prefix.]genome_name[.suffix])
- * int is_domain_cluster_data_stored_outside - default value is 0
- * string domain_cluster_data_id_prefix - used for domain cluster objects id generation ([prefix.]domain_name[.suffix])
- * string domain_cluster_data_id_suffix - used for domain cluster objects id generation ([prefix.]domain_name[.suffix])
- * @optional dms_ref
- * @optional clusters_for_extension
- * @optional is_genome_annotation_stored_outside
- * @optional genome_annotation_id_prefix
- * @optional genome_annotation_id_suffix
- * @optional is_domain_cluster_data_stored_outside
- * @optional domain_cluster_data_id_prefix
- * @optional domain_cluster_data_id_suffix
+ * string out_result_id - id of resulting object of type DomainAnnotation
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "genomes",
+    "genome",
     "dms_ref",
-    "clusters_for_extension",
     "domain_types",
     "out_workspace",
-    "out_result_id",
-    "is_genome_annotation_stored_outside",
-    "genome_annotation_id_prefix",
-    "genome_annotation_id_suffix",
-    "is_domain_cluster_data_stored_outside",
-    "domain_cluster_data_id_prefix",
-    "domain_cluster_data_id_suffix"
+    "out_result_id"
 })
 public class SearchDomainsParams {
 
-    @JsonProperty("genomes")
-    private List<String> genomes;
+    @JsonProperty("genome")
+    private java.lang.String genome;
     @JsonProperty("dms_ref")
     private java.lang.String dmsRef;
-    @JsonProperty("clusters_for_extension")
-    private java.lang.String clustersForExtension;
     @JsonProperty("domain_types")
     private List<String> domainTypes;
     @JsonProperty("out_workspace")
     private java.lang.String outWorkspace;
     @JsonProperty("out_result_id")
     private java.lang.String outResultId;
-    @JsonProperty("is_genome_annotation_stored_outside")
-    private Long isGenomeAnnotationStoredOutside;
-    @JsonProperty("genome_annotation_id_prefix")
-    private java.lang.String genomeAnnotationIdPrefix;
-    @JsonProperty("genome_annotation_id_suffix")
-    private java.lang.String genomeAnnotationIdSuffix;
-    @JsonProperty("is_domain_cluster_data_stored_outside")
-    private Long isDomainClusterDataStoredOutside;
-    @JsonProperty("domain_cluster_data_id_prefix")
-    private java.lang.String domainClusterDataIdPrefix;
-    @JsonProperty("domain_cluster_data_id_suffix")
-    private java.lang.String domainClusterDataIdSuffix;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
-    @JsonProperty("genomes")
-    public List<String> getGenomes() {
-        return genomes;
+    @JsonProperty("genome")
+    public java.lang.String getGenome() {
+        return genome;
     }
 
-    @JsonProperty("genomes")
-    public void setGenomes(List<String> genomes) {
-        this.genomes = genomes;
+    @JsonProperty("genome")
+    public void setGenome(java.lang.String genome) {
+        this.genome = genome;
     }
 
-    public SearchDomainsParams withGenomes(List<String> genomes) {
-        this.genomes = genomes;
+    public SearchDomainsParams withGenome(java.lang.String genome) {
+        this.genome = genome;
         return this;
     }
 
@@ -109,21 +74,6 @@ public class SearchDomainsParams {
 
     public SearchDomainsParams withDmsRef(java.lang.String dmsRef) {
         this.dmsRef = dmsRef;
-        return this;
-    }
-
-    @JsonProperty("clusters_for_extension")
-    public java.lang.String getClustersForExtension() {
-        return clustersForExtension;
-    }
-
-    @JsonProperty("clusters_for_extension")
-    public void setClustersForExtension(java.lang.String clustersForExtension) {
-        this.clustersForExtension = clustersForExtension;
-    }
-
-    public SearchDomainsParams withClustersForExtension(java.lang.String clustersForExtension) {
-        this.clustersForExtension = clustersForExtension;
         return this;
     }
 
@@ -172,96 +122,6 @@ public class SearchDomainsParams {
         return this;
     }
 
-    @JsonProperty("is_genome_annotation_stored_outside")
-    public Long getIsGenomeAnnotationStoredOutside() {
-        return isGenomeAnnotationStoredOutside;
-    }
-
-    @JsonProperty("is_genome_annotation_stored_outside")
-    public void setIsGenomeAnnotationStoredOutside(Long isGenomeAnnotationStoredOutside) {
-        this.isGenomeAnnotationStoredOutside = isGenomeAnnotationStoredOutside;
-    }
-
-    public SearchDomainsParams withIsGenomeAnnotationStoredOutside(Long isGenomeAnnotationStoredOutside) {
-        this.isGenomeAnnotationStoredOutside = isGenomeAnnotationStoredOutside;
-        return this;
-    }
-
-    @JsonProperty("genome_annotation_id_prefix")
-    public java.lang.String getGenomeAnnotationIdPrefix() {
-        return genomeAnnotationIdPrefix;
-    }
-
-    @JsonProperty("genome_annotation_id_prefix")
-    public void setGenomeAnnotationIdPrefix(java.lang.String genomeAnnotationIdPrefix) {
-        this.genomeAnnotationIdPrefix = genomeAnnotationIdPrefix;
-    }
-
-    public SearchDomainsParams withGenomeAnnotationIdPrefix(java.lang.String genomeAnnotationIdPrefix) {
-        this.genomeAnnotationIdPrefix = genomeAnnotationIdPrefix;
-        return this;
-    }
-
-    @JsonProperty("genome_annotation_id_suffix")
-    public java.lang.String getGenomeAnnotationIdSuffix() {
-        return genomeAnnotationIdSuffix;
-    }
-
-    @JsonProperty("genome_annotation_id_suffix")
-    public void setGenomeAnnotationIdSuffix(java.lang.String genomeAnnotationIdSuffix) {
-        this.genomeAnnotationIdSuffix = genomeAnnotationIdSuffix;
-    }
-
-    public SearchDomainsParams withGenomeAnnotationIdSuffix(java.lang.String genomeAnnotationIdSuffix) {
-        this.genomeAnnotationIdSuffix = genomeAnnotationIdSuffix;
-        return this;
-    }
-
-    @JsonProperty("is_domain_cluster_data_stored_outside")
-    public Long getIsDomainClusterDataStoredOutside() {
-        return isDomainClusterDataStoredOutside;
-    }
-
-    @JsonProperty("is_domain_cluster_data_stored_outside")
-    public void setIsDomainClusterDataStoredOutside(Long isDomainClusterDataStoredOutside) {
-        this.isDomainClusterDataStoredOutside = isDomainClusterDataStoredOutside;
-    }
-
-    public SearchDomainsParams withIsDomainClusterDataStoredOutside(Long isDomainClusterDataStoredOutside) {
-        this.isDomainClusterDataStoredOutside = isDomainClusterDataStoredOutside;
-        return this;
-    }
-
-    @JsonProperty("domain_cluster_data_id_prefix")
-    public java.lang.String getDomainClusterDataIdPrefix() {
-        return domainClusterDataIdPrefix;
-    }
-
-    @JsonProperty("domain_cluster_data_id_prefix")
-    public void setDomainClusterDataIdPrefix(java.lang.String domainClusterDataIdPrefix) {
-        this.domainClusterDataIdPrefix = domainClusterDataIdPrefix;
-    }
-
-    public SearchDomainsParams withDomainClusterDataIdPrefix(java.lang.String domainClusterDataIdPrefix) {
-        this.domainClusterDataIdPrefix = domainClusterDataIdPrefix;
-        return this;
-    }
-
-    @JsonProperty("domain_cluster_data_id_suffix")
-    public java.lang.String getDomainClusterDataIdSuffix() {
-        return domainClusterDataIdSuffix;
-    }
-
-    @JsonProperty("domain_cluster_data_id_suffix")
-    public void setDomainClusterDataIdSuffix(java.lang.String domainClusterDataIdSuffix) {
-        this.domainClusterDataIdSuffix = domainClusterDataIdSuffix;
-    }
-
-    public SearchDomainsParams withDomainClusterDataIdSuffix(java.lang.String domainClusterDataIdSuffix) {
-        this.domainClusterDataIdSuffix = domainClusterDataIdSuffix;
-        return this;
-    }
-
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -274,7 +134,7 @@ public class SearchDomainsParams {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((((("SearchDomainsParams"+" [genomes=")+ genomes)+", dmsRef=")+ dmsRef)+", clustersForExtension=")+ clustersForExtension)+", domainTypes=")+ domainTypes)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", isGenomeAnnotationStoredOutside=")+ isGenomeAnnotationStoredOutside)+", genomeAnnotationIdPrefix=")+ genomeAnnotationIdPrefix)+", genomeAnnotationIdSuffix=")+ genomeAnnotationIdSuffix)+", isDomainClusterDataStoredOutside=")+ isDomainClusterDataStoredOutside)+", domainClusterDataIdPrefix=")+ domainClusterDataIdPrefix)+", domainClusterDataIdSuffix=")+ domainClusterDataIdSuffix)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("SearchDomainsParams"+" [genome=")+ genome)+", dmsRef=")+ dmsRef)+", domainTypes=")+ domainTypes)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

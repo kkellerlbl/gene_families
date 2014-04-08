@@ -2,6 +2,7 @@
 package us.kbase.kbasegenefamilies;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -15,7 +16,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: DomainModelSet</p>
  * <pre>
  * string set_name - name of model set
- * mapping<domain_name, domain_model_ref> data - mapping from domain name to reference to domain model object
+ * list<dms_ref> parent_refs - optional references to inherited domains
+ * list<domain_model_type_ref> types;
+ * mapping<domain_name, domain_model_ref> data - mapping from domain name to reference to 
+ *         domain model object
  * </pre>
  * 
  */
@@ -23,12 +27,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "set_name",
+    "parent_refs",
+    "types",
     "data"
 })
 public class DomainModelSet {
 
     @JsonProperty("set_name")
     private java.lang.String setName;
+    @JsonProperty("parent_refs")
+    private List<String> parentRefs;
+    @JsonProperty("types")
+    private List<String> types;
     @JsonProperty("data")
     private Map<String, String> data;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
@@ -45,6 +55,36 @@ public class DomainModelSet {
 
     public DomainModelSet withSetName(java.lang.String setName) {
         this.setName = setName;
+        return this;
+    }
+
+    @JsonProperty("parent_refs")
+    public List<String> getParentRefs() {
+        return parentRefs;
+    }
+
+    @JsonProperty("parent_refs")
+    public void setParentRefs(List<String> parentRefs) {
+        this.parentRefs = parentRefs;
+    }
+
+    public DomainModelSet withParentRefs(List<String> parentRefs) {
+        this.parentRefs = parentRefs;
+        return this;
+    }
+
+    @JsonProperty("types")
+    public List<String> getTypes() {
+        return types;
+    }
+
+    @JsonProperty("types")
+    public void setTypes(List<String> types) {
+        this.types = types;
+    }
+
+    public DomainModelSet withTypes(List<String> types) {
+        this.types = types;
         return this;
     }
 
@@ -75,7 +115,7 @@ public class DomainModelSet {
 
     @Override
     public java.lang.String toString() {
-        return ((((((("DomainModelSet"+" [setName=")+ setName)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("DomainModelSet"+" [setName=")+ setName)+", parentRefs=")+ parentRefs)+", types=")+ types)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -15,10 +15,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: DomainModel</p>
  * <pre>
  * domain_name domain_name - domain model name
- * string domain_type - type is one of 'CHL', 'COG', 'KOG', 'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 
- *         'TIGR', 'cd', 'pfam', 'smart'. 
+ * domain_model_type_ref domain_type - type of domain. 
  * string description - short description like domain functional role
- * int is_full_length - if 1 then there could be found only 1 domain copy of this type in protein
+ * int is_full_length - if 1 then there could be found only 1 domain copy of this type in 
+ *         protein
  * int is_cdd - if 1 then next cdd fields should be used for search
  * string cdd_scoremat_file - main file used in RPS-blast
  * string cdd_consensus_seq - consensus of domain multiple alignment
