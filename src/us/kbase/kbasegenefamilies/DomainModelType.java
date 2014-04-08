@@ -17,15 +17,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * string domain_type - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
  *         'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 'TIGR', 'cd', 'pfam', 'smart'. 
  * string version - version of domain type release
- * string date - release date
+ * string date - release date (for example now the last CDD revision date is 
+ *         2014-02-20)
  * string source_name - name of source (resource like CDD)
  * string source_url - ftp/http where data was downloaded from
- * string source_version - optional, use it in case it's different from verion of 
+ * string source_version - optional, use it in case it's different from version of 
  *         domain type
  * string description - short description of this domain type/source
- * int is_full_length - if 1 then there could be found only 1 domain copy of this type in 
- *         protein
+ * int is_full_length - if 1 then there could be found only 1 domain copy of this 
+ *         type in protein
  * int is_cdd - if 1 then next cdd fields should be used for search
+ * string cdd_rps_blast_version - now we support RPS-blast version 2.2.29
+ * @optional source_version
+ * @optional cdd_rps_blast_version
  * </pre>
  * 
  */
@@ -40,7 +44,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "source_version",
     "description",
     "is_full_length",
-    "is_cdd"
+    "is_cdd",
+    "cdd_rps_blast_version"
 })
 public class DomainModelType {
 
@@ -62,6 +67,8 @@ public class DomainModelType {
     private Long isFullLength;
     @JsonProperty("is_cdd")
     private Long isCdd;
+    @JsonProperty("cdd_rps_blast_version")
+    private String cddRpsBlastVersion;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("domain_type")
@@ -199,6 +206,21 @@ public class DomainModelType {
         return this;
     }
 
+    @JsonProperty("cdd_rps_blast_version")
+    public String getCddRpsBlastVersion() {
+        return cddRpsBlastVersion;
+    }
+
+    @JsonProperty("cdd_rps_blast_version")
+    public void setCddRpsBlastVersion(String cddRpsBlastVersion) {
+        this.cddRpsBlastVersion = cddRpsBlastVersion;
+    }
+
+    public DomainModelType withCddRpsBlastVersion(String cddRpsBlastVersion) {
+        this.cddRpsBlastVersion = cddRpsBlastVersion;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -211,7 +233,7 @@ public class DomainModelType {
 
     @Override
     public String toString() {
-        return ((((((((((((((((((((("DomainModelType"+" [domainType=")+ domainType)+", version=")+ version)+", date=")+ date)+", sourceName=")+ sourceName)+", sourceUrl=")+ sourceUrl)+", sourceVersion=")+ sourceVersion)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((("DomainModelType"+" [domainType=")+ domainType)+", version=")+ version)+", date=")+ date)+", sourceName=")+ sourceName)+", sourceUrl=")+ sourceUrl)+", sourceVersion=")+ sourceVersion)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

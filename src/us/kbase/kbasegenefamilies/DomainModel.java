@@ -17,19 +17,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * domain_name domain_name - domain model name
  * domain_model_type_ref domain_type - type of domain. 
  * string description - short description like domain functional role
- * int is_full_length - if 1 then there could be found only 1 domain copy of this type in 
- *         protein
- * int is_cdd - if 1 then next cdd fields should be used for search
  * string cdd_scoremat_file - main file used in RPS-blast
  * string cdd_consensus_seq - consensus of domain multiple alignment
  * double cdd_threshold - threshold for RPS-blast (default value is 9.82)
- * string cdd_rps_blast_version - now we support RPS-blast version 2.2.29                
- * string cdd_revision_date - now the last cdd revision date is 2014-02-20
  * @optional cdd_scoremat_gzip_file
  * @optional cdd_consensus_seq
  * @optional cdd_threshold
- * @optional cdd_rps_blast_version
- * @optional cdd_revision_date
  * </pre>
  * 
  */
@@ -39,13 +32,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "domain_name",
     "domain_type",
     "description",
-    "is_full_length",
-    "is_cdd",
     "cdd_scoremat_gzip_file",
     "cdd_consensus_seq",
-    "cdd_threshold",
-    "cdd_rps_blast_version",
-    "cdd_revision_date"
+    "cdd_threshold"
 })
 public class DomainModel {
 
@@ -55,20 +44,12 @@ public class DomainModel {
     private String domainType;
     @JsonProperty("description")
     private String description;
-    @JsonProperty("is_full_length")
-    private Long isFullLength;
-    @JsonProperty("is_cdd")
-    private Long isCdd;
     @JsonProperty("cdd_scoremat_gzip_file")
     private String cddScorematGzipFile;
     @JsonProperty("cdd_consensus_seq")
     private String cddConsensusSeq;
     @JsonProperty("cdd_threshold")
     private Double cddThreshold;
-    @JsonProperty("cdd_rps_blast_version")
-    private String cddRpsBlastVersion;
-    @JsonProperty("cdd_revision_date")
-    private String cddRevisionDate;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("domain_name")
@@ -113,36 +94,6 @@ public class DomainModel {
 
     public DomainModel withDescription(String description) {
         this.description = description;
-        return this;
-    }
-
-    @JsonProperty("is_full_length")
-    public Long getIsFullLength() {
-        return isFullLength;
-    }
-
-    @JsonProperty("is_full_length")
-    public void setIsFullLength(Long isFullLength) {
-        this.isFullLength = isFullLength;
-    }
-
-    public DomainModel withIsFullLength(Long isFullLength) {
-        this.isFullLength = isFullLength;
-        return this;
-    }
-
-    @JsonProperty("is_cdd")
-    public Long getIsCdd() {
-        return isCdd;
-    }
-
-    @JsonProperty("is_cdd")
-    public void setIsCdd(Long isCdd) {
-        this.isCdd = isCdd;
-    }
-
-    public DomainModel withIsCdd(Long isCdd) {
-        this.isCdd = isCdd;
         return this;
     }
 
@@ -191,36 +142,6 @@ public class DomainModel {
         return this;
     }
 
-    @JsonProperty("cdd_rps_blast_version")
-    public String getCddRpsBlastVersion() {
-        return cddRpsBlastVersion;
-    }
-
-    @JsonProperty("cdd_rps_blast_version")
-    public void setCddRpsBlastVersion(String cddRpsBlastVersion) {
-        this.cddRpsBlastVersion = cddRpsBlastVersion;
-    }
-
-    public DomainModel withCddRpsBlastVersion(String cddRpsBlastVersion) {
-        this.cddRpsBlastVersion = cddRpsBlastVersion;
-        return this;
-    }
-
-    @JsonProperty("cdd_revision_date")
-    public String getCddRevisionDate() {
-        return cddRevisionDate;
-    }
-
-    @JsonProperty("cdd_revision_date")
-    public void setCddRevisionDate(String cddRevisionDate) {
-        this.cddRevisionDate = cddRevisionDate;
-    }
-
-    public DomainModel withCddRevisionDate(String cddRevisionDate) {
-        this.cddRevisionDate = cddRevisionDate;
-        return this;
-    }
-
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -233,7 +154,7 @@ public class DomainModel {
 
     @Override
     public String toString() {
-        return ((((((((((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainType=")+ domainType)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", cddRevisionDate=")+ cddRevisionDate)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainType=")+ domainType)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

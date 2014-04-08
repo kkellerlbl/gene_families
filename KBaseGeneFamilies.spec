@@ -9,15 +9,19 @@ module KBaseGeneFamilies {
 		string domain_type - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
 			'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 'TIGR', 'cd', 'pfam', 'smart'. 
 		string version - version of domain type release
-		string date - release date
+		string date - release date (for example now the last CDD revision date is 
+			2014-02-20)
 		string source_name - name of source (resource like CDD)
 		string source_url - ftp/http where data was downloaded from
-		string source_version - optional, use it in case it's different from verion of 
+		string source_version - optional, use it in case it's different from version of 
 			domain type
 		string description - short description of this domain type/source
-		int is_full_length - if 1 then there could be found only 1 domain copy of this type in 
-			protein
+		int is_full_length - if 1 then there could be found only 1 domain copy of this 
+			type in protein
 		int is_cdd - if 1 then next cdd fields should be used for search
+		string cdd_rps_blast_version - now we support RPS-blast version 2.2.29
+		@optional source_version
+		@optional cdd_rps_blast_version
 	*/
 	typedef structure {
 		string domain_type;
@@ -29,6 +33,7 @@ module KBaseGeneFamilies {
 		string description;
 		int is_full_length;
 		int is_cdd;
+		string cdd_rps_blast_version;		
 	} DomainModelType;
 
 	typedef string domain_name;
@@ -42,31 +47,20 @@ module KBaseGeneFamilies {
 		domain_name domain_name - domain model name
 		domain_model_type_ref domain_type - type of domain. 
 		string description - short description like domain functional role
-		int is_full_length - if 1 then there could be found only 1 domain copy of this type in 
-			protein
-		int is_cdd - if 1 then next cdd fields should be used for search
 		string cdd_scoremat_file - main file used in RPS-blast
 		string cdd_consensus_seq - consensus of domain multiple alignment
 		double cdd_threshold - threshold for RPS-blast (default value is 9.82)
-		string cdd_rps_blast_version - now we support RPS-blast version 2.2.29		
-		string cdd_revision_date - now the last cdd revision date is 2014-02-20
 		@optional cdd_scoremat_gzip_file
 		@optional cdd_consensus_seq
 		@optional cdd_threshold
-		@optional cdd_rps_blast_version
-		@optional cdd_revision_date
 	*/
 	typedef structure {
 		domain_name domain_name;
-		string domain_type;
+		domain_model_type_ref domain_type;
 		string description;
-		int is_full_length;
-		int is_cdd;
 		string cdd_scoremat_gzip_file; 
 		string cdd_consensus_seq;
 		float cdd_threshold;
-		string cdd_rps_blast_version;
-		string cdd_revision_date;
 	} DomainModel;
 
 	/* 
@@ -77,15 +71,15 @@ module KBaseGeneFamilies {
 	/*
 		string set_name - name of model set
 		list<dms_ref> parent_refs - optional references to inherited domains
-		list<domain_model_type_ref> types;
-		mapping<domain_name, domain_model_ref> data - mapping from domain name to reference to 
+		list<domain_model_type_ref> types - types of models in data
+		list<domain_model_ref> data - mapping from domain name to reference to 
 			domain model object
 	*/
 	typedef structure {
 		string set_name;
 		list<dms_ref> parent_refs;
 		list<domain_model_type_ref> types;
-		mapping<domain_name, domain_model_ref> data;
+		list<domain_model_ref> data;
 	} DomainModelSet;
 
 	/* 
@@ -198,12 +192,16 @@ module KBaseGeneFamilies {
 			of domain models extracted from dms_ref/clusters_for_extension
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainSearchResult
-		int is_genome_annotation_stored_outside - default value is 0
+		int is_genome_annotation_stored_outside - defines should genome annotations be stored 
+			outside of DomainClusterSearchResult object (using annotation_refs rather than 
+			annotations field), default value is 0
 		string genome_annotation_id_prefix - used for genome domain annotation objects id 
 			generation ([prefix.]genome_name[.suffix])
 		string genome_annotation_id_suffix - used for genome domain annotation objects id 
 			generation ([prefix.]genome_name[.suffix])
-		int is_domain_cluster_data_stored_outside - default value is 0
+		int is_domain_cluster_data_stored_outside - defines should domain clusters be stored 
+			outside of DomainClusterSearchResult object (using domain_cluster_refs rather than 
+			domain_clusters field), default value is 0
 		string domain_cluster_data_id_prefix - used for domain cluster objects id generation 
 			([prefix.]domain_name[.suffix])
 		string domain_cluster_data_id_suffix - used for domain cluster objects id generation 
@@ -245,12 +243,16 @@ module KBaseGeneFamilies {
 			of domain models extracted from dms_ref/clusters_for_extension
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainSearchResult
-		int is_genome_annotation_stored_outside - default value is 0
+		int is_genome_annotation_stored_outside - defines should genome annotations be stored 
+			outside of DomainClusterSearchResult object (using annotation_refs rather than 
+			annotations field), default value is 0
 		string genome_annotation_id_prefix - used for genome domain annotation objects id 
 			generation ([prefix.]genome_name[.suffix])
 		string genome_annotation_id_suffix - used for genome domain annotation objects id 
 			generation ([prefix.]genome_name[.suffix])
-		int is_domain_cluster_data_stored_outside - default value is 0
+		int is_domain_cluster_data_stored_outside - defines should domain clusters be stored 
+			outside of DomainClusterSearchResult object (using domain_cluster_refs rather than 
+			domain_clusters field), default value is 0
 		string domain_cluster_data_id_prefix - used for domain cluster objects id generation 
 			([prefix.]domain_name[.suffix])
 		string domain_cluster_data_id_suffix - used for domain cluster objects id generation 

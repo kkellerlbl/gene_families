@@ -17,8 +17,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <pre>
  * string set_name - name of model set
  * list<dms_ref> parent_refs - optional references to inherited domains
- * list<domain_model_type_ref> types;
- * mapping<domain_name, domain_model_ref> data - mapping from domain name to reference to 
+ * list<domain_model_type_ref> types - types of models in data
+ * list<domain_model_ref> data - mapping from domain name to reference to 
  *         domain model object
  * </pre>
  * 
@@ -40,7 +40,7 @@ public class DomainModelSet {
     @JsonProperty("types")
     private List<String> types;
     @JsonProperty("data")
-    private Map<String, String> data;
+    private List<String> data;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("set_name")
@@ -89,16 +89,16 @@ public class DomainModelSet {
     }
 
     @JsonProperty("data")
-    public Map<String, String> getData() {
+    public List<String> getData() {
         return data;
     }
 
     @JsonProperty("data")
-    public void setData(Map<String, String> data) {
+    public void setData(List<String> data) {
         this.data = data;
     }
 
-    public DomainModelSet withData(Map<String, String> data) {
+    public DomainModelSet withData(List<String> data) {
         this.data = data;
         return this;
     }

@@ -24,12 +24,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *         of domain models extracted from dms_ref/clusters_for_extension
  * string out_workspace - output workspace
  * string out_result_id - id of resulting object of type DomainSearchResult
- * int is_genome_annotation_stored_outside - default value is 0
+ * int is_genome_annotation_stored_outside - defines should genome annotations be stored 
+ *         outside of DomainClusterSearchResult object (using annotation_refs rather than 
+ *         annotations field), default value is 0
  * string genome_annotation_id_prefix - used for genome domain annotation objects id 
  *         generation ([prefix.]genome_name[.suffix])
  * string genome_annotation_id_suffix - used for genome domain annotation objects id 
  *         generation ([prefix.]genome_name[.suffix])
- * int is_domain_cluster_data_stored_outside - default value is 0
+ * int is_domain_cluster_data_stored_outside - defines should domain clusters be stored 
+ *         outside of DomainClusterSearchResult object (using domain_cluster_refs rather than 
+ *         domain_clusters field), default value is 0
  * string domain_cluster_data_id_prefix - used for domain cluster objects id generation 
  *         ([prefix.]domain_name[.suffix])
  * string domain_cluster_data_id_suffix - used for domain cluster objects id generation 
