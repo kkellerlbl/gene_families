@@ -12,25 +12,34 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ProteinFamilyModel</p>
+ * <p>Original spec-file type: DomainModel</p>
  * <pre>
- * pfm_name family_name - protein family model name
- * string family_type - type like 'pfam', 'tigrfam', ... (we need to register enum of these values somewhere)
+ * domain_name domain_name - domain model name
+ * string domain_type - type is one of 'CHL', 'COG', 'KOG', 'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 
+ *         'TIGR', 'cd', 'pfam', 'smart'. 
  * string description - short description like domain functional role
+ * int is_full_length - if 1 then there could be found only 1 domain copy of this type in protein
  * int is_cdd - if 1 then next cdd fields should be used for search
  * string cdd_scoremat_file - main file used in RPS-blast
- * string cdd_consensus_seq - consensus of family multiple alignment
+ * string cdd_consensus_seq - consensus of domain multiple alignment
  * double cdd_threshold - threshold for RPS-blast (default value is 9.82)
  * string cdd_rps_blast_version - now we support RPS-blast version 2.2.29                
  * string cdd_revision_date - now the last cdd revision date is 2014-02-20
+ * @optional cdd_scoremat_gzip_file
+ * @optional cdd_consensus_seq
+ * @optional cdd_threshold
+ * @optional cdd_rps_blast_version
+ * @optional cdd_revision_date
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "family_name",
+    "domain_name",
+    "domain_type",
     "description",
+    "is_full_length",
     "is_cdd",
     "cdd_scoremat_gzip_file",
     "cdd_consensus_seq",
@@ -38,12 +47,16 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "cdd_rps_blast_version",
     "cdd_revision_date"
 })
-public class ProteinFamilyModel {
+public class DomainModel {
 
-    @JsonProperty("family_name")
-    private String familyName;
+    @JsonProperty("domain_name")
+    private String domainName;
+    @JsonProperty("domain_type")
+    private String domainType;
     @JsonProperty("description")
     private String description;
+    @JsonProperty("is_full_length")
+    private Long isFullLength;
     @JsonProperty("is_cdd")
     private Long isCdd;
     @JsonProperty("cdd_scoremat_gzip_file")
@@ -58,18 +71,33 @@ public class ProteinFamilyModel {
     private String cddRevisionDate;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("family_name")
-    public String getFamilyName() {
-        return familyName;
+    @JsonProperty("domain_name")
+    public String getDomainName() {
+        return domainName;
     }
 
-    @JsonProperty("family_name")
-    public void setFamilyName(String familyName) {
-        this.familyName = familyName;
+    @JsonProperty("domain_name")
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 
-    public ProteinFamilyModel withFamilyName(String familyName) {
-        this.familyName = familyName;
+    public DomainModel withDomainName(String domainName) {
+        this.domainName = domainName;
+        return this;
+    }
+
+    @JsonProperty("domain_type")
+    public String getDomainType() {
+        return domainType;
+    }
+
+    @JsonProperty("domain_type")
+    public void setDomainType(String domainType) {
+        this.domainType = domainType;
+    }
+
+    public DomainModel withDomainType(String domainType) {
+        this.domainType = domainType;
         return this;
     }
 
@@ -83,8 +111,23 @@ public class ProteinFamilyModel {
         this.description = description;
     }
 
-    public ProteinFamilyModel withDescription(String description) {
+    public DomainModel withDescription(String description) {
         this.description = description;
+        return this;
+    }
+
+    @JsonProperty("is_full_length")
+    public Long getIsFullLength() {
+        return isFullLength;
+    }
+
+    @JsonProperty("is_full_length")
+    public void setIsFullLength(Long isFullLength) {
+        this.isFullLength = isFullLength;
+    }
+
+    public DomainModel withIsFullLength(Long isFullLength) {
+        this.isFullLength = isFullLength;
         return this;
     }
 
@@ -98,7 +141,7 @@ public class ProteinFamilyModel {
         this.isCdd = isCdd;
     }
 
-    public ProteinFamilyModel withIsCdd(Long isCdd) {
+    public DomainModel withIsCdd(Long isCdd) {
         this.isCdd = isCdd;
         return this;
     }
@@ -113,7 +156,7 @@ public class ProteinFamilyModel {
         this.cddScorematGzipFile = cddScorematGzipFile;
     }
 
-    public ProteinFamilyModel withCddScorematGzipFile(String cddScorematGzipFile) {
+    public DomainModel withCddScorematGzipFile(String cddScorematGzipFile) {
         this.cddScorematGzipFile = cddScorematGzipFile;
         return this;
     }
@@ -128,7 +171,7 @@ public class ProteinFamilyModel {
         this.cddConsensusSeq = cddConsensusSeq;
     }
 
-    public ProteinFamilyModel withCddConsensusSeq(String cddConsensusSeq) {
+    public DomainModel withCddConsensusSeq(String cddConsensusSeq) {
         this.cddConsensusSeq = cddConsensusSeq;
         return this;
     }
@@ -143,7 +186,7 @@ public class ProteinFamilyModel {
         this.cddThreshold = cddThreshold;
     }
 
-    public ProteinFamilyModel withCddThreshold(Double cddThreshold) {
+    public DomainModel withCddThreshold(Double cddThreshold) {
         this.cddThreshold = cddThreshold;
         return this;
     }
@@ -158,7 +201,7 @@ public class ProteinFamilyModel {
         this.cddRpsBlastVersion = cddRpsBlastVersion;
     }
 
-    public ProteinFamilyModel withCddRpsBlastVersion(String cddRpsBlastVersion) {
+    public DomainModel withCddRpsBlastVersion(String cddRpsBlastVersion) {
         this.cddRpsBlastVersion = cddRpsBlastVersion;
         return this;
     }
@@ -173,7 +216,7 @@ public class ProteinFamilyModel {
         this.cddRevisionDate = cddRevisionDate;
     }
 
-    public ProteinFamilyModel withCddRevisionDate(String cddRevisionDate) {
+    public DomainModel withCddRevisionDate(String cddRevisionDate) {
         this.cddRevisionDate = cddRevisionDate;
         return this;
     }
@@ -190,7 +233,7 @@ public class ProteinFamilyModel {
 
     @Override
     public String toString() {
-        return ((((((((((((((((((("ProteinFamilyModel"+" [familyName=")+ familyName)+", description=")+ description)+", isCdd=")+ isCdd)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", cddRevisionDate=")+ cddRevisionDate)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainType=")+ domainType)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", cddRevisionDate=")+ cddRevisionDate)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

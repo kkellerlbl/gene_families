@@ -10,16 +10,16 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import us.kbase.common.service.Tuple9;
+import us.kbase.common.service.Tuple7;
 
 
 /**
- * <p>Original spec-file type: ProteinFamilyCluster</p>
+ * <p>Original spec-file type: DomainCluster</p>
  * <pre>
- * pfm_ref model - reference to protein family model
- * pfc_ref parent_ref - optional reference to parent cluster (containing data describing some common set of genomes)
- * list<tuple<genome_ref,string contig_id,string feature_id,int feature_start,int feature_stop,int start_in_feature,int stop_in_feature,float evalue,float bitscore>> data - 
- *         list of entrances of this family into different genomes
+ * domain_model_ref model - reference to domain model
+ * domain_cluster_ref parent_ref - optional reference to parent cluster (containing data describing some common set of genomes)
+ * mapping<genome_ref,list<tuple<string contig_id,string feature_id,int feature_list_pos,int number_of_copies,float best_evalue,
+ *         float best_bitscore,string best_profile_alignment>>> data - list of entrances of this domain into different genomes
  * @optional parent_ref
  * </pre>
  * 
@@ -31,14 +31,14 @@ import us.kbase.common.service.Tuple9;
     "parent_ref",
     "data"
 })
-public class ProteinFamilyCluster {
+public class DomainCluster {
 
     @JsonProperty("model")
     private java.lang.String model;
     @JsonProperty("parent_ref")
     private java.lang.String parentRef;
     @JsonProperty("data")
-    private List<Tuple9 <String, String, String, Long, Long, Long, Long, Double, Double>> data;
+    private Map<String, List<Tuple7 <String, String, Long, Long, Double, Double, String>>> data;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("model")
@@ -51,7 +51,7 @@ public class ProteinFamilyCluster {
         this.model = model;
     }
 
-    public ProteinFamilyCluster withModel(java.lang.String model) {
+    public DomainCluster withModel(java.lang.String model) {
         this.model = model;
         return this;
     }
@@ -66,22 +66,22 @@ public class ProteinFamilyCluster {
         this.parentRef = parentRef;
     }
 
-    public ProteinFamilyCluster withParentRef(java.lang.String parentRef) {
+    public DomainCluster withParentRef(java.lang.String parentRef) {
         this.parentRef = parentRef;
         return this;
     }
 
     @JsonProperty("data")
-    public List<Tuple9 <String, String, String, Long, Long, Long, Long, Double, Double>> getData() {
+    public Map<String, List<Tuple7 <String, String, Long, Long, Double, Double, String>>> getData() {
         return data;
     }
 
     @JsonProperty("data")
-    public void setData(List<Tuple9 <String, String, String, Long, Long, Long, Long, Double, Double>> data) {
+    public void setData(Map<String, List<Tuple7 <String, String, Long, Long, Double, Double, String>>> data) {
         this.data = data;
     }
 
-    public ProteinFamilyCluster withData(List<Tuple9 <String, String, String, Long, Long, Long, Long, Double, Double>> data) {
+    public DomainCluster withData(Map<String, List<Tuple7 <String, String, Long, Long, Double, Double, String>>> data) {
         this.data = data;
         return this;
     }
@@ -98,7 +98,7 @@ public class ProteinFamilyCluster {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((("ProteinFamilyCluster"+" [model=")+ model)+", parentRef=")+ parentRef)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((("DomainCluster"+" [model=")+ model)+", parentRef=")+ parentRef)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -25,17 +25,17 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     }
 
     /**
-     * <p>Original spec-file function name: search_protein_families</p>
+     * <p>Original spec-file function name: search_domains</p>
      * <pre>
      * </pre>
-     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchProteinFamiliesParams SearchProteinFamiliesParams} (original type "search_protein_families_params")
+     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams} (original type "search_domains_params")
      * @return   parameter "job_id" of String
      */
-    @JsonServerMethod(rpc = "KBaseGeneFamilies.search_protein_families")
-    public String searchProteinFamilies(SearchProteinFamiliesParams input, AuthToken authPart) throws Exception {
+    @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains")
+    public String searchDomains(SearchDomainsParams input, AuthToken authPart) throws Exception {
         String returnVal = null;
-        //BEGIN search_protein_families
-        //END search_protein_families
+        //BEGIN search_domains
+        //END search_domains
         return returnVal;
     }
 

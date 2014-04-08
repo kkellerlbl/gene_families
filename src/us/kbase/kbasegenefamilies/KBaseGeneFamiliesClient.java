@@ -56,19 +56,19 @@ public class KBaseGeneFamiliesClient {
     }
 
     /**
-     * <p>Original spec-file function name: search_protein_families</p>
+     * <p>Original spec-file function name: search_domains</p>
      * <pre>
      * </pre>
-     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchProteinFamiliesParams SearchProteinFamiliesParams} (original type "search_protein_families_params")
+     * @param   input   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsParams SearchDomainsParams} (original type "search_domains_params")
      * @return   parameter "job_id" of String
      * @throws IOException if an IO exception occurs
      * @throws JsonClientException if a JSON RPC exception occurs
      */
-    public String searchProteinFamilies(SearchProteinFamiliesParams input) throws IOException, JsonClientException {
+    public String searchDomains(SearchDomainsParams input) throws IOException, JsonClientException {
         List<Object> args = new ArrayList<Object>();
         args.add(input);
         TypeReference<List<String>> retType = new TypeReference<List<String>>() {};
-        List<String> res = caller.jsonrpcCall("KBaseGeneFamilies.search_protein_families", args, retType, true, true);
+        List<String> res = caller.jsonrpcCall("KBaseGeneFamilies.search_domains", args, retType, true, true);
         return res.get(0);
     }
 }

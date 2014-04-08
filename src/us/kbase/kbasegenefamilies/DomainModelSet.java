@@ -12,10 +12,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * <p>Original spec-file type: ProteinFamilyModelSet</p>
+ * <p>Original spec-file type: DomainModelSet</p>
  * <pre>
  * string set_name - name of model set
- * mapping<pfm_name, pfm_ref> data - mapping from family name to reference to family object
+ * mapping<domain_name, domain_model_ref> data - mapping from domain name to reference to domain model object
  * </pre>
  * 
  */
@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "set_name",
     "data"
 })
-public class ProteinFamilyModelSet {
+public class DomainModelSet {
 
     @JsonProperty("set_name")
     private java.lang.String setName;
@@ -43,7 +43,7 @@ public class ProteinFamilyModelSet {
         this.setName = setName;
     }
 
-    public ProteinFamilyModelSet withSetName(java.lang.String setName) {
+    public DomainModelSet withSetName(java.lang.String setName) {
         this.setName = setName;
         return this;
     }
@@ -58,7 +58,7 @@ public class ProteinFamilyModelSet {
         this.data = data;
     }
 
-    public ProteinFamilyModelSet withData(Map<String, String> data) {
+    public DomainModelSet withData(Map<String, String> data) {
         this.data = data;
         return this;
     }
@@ -75,7 +75,7 @@ public class ProteinFamilyModelSet {
 
     @Override
     public java.lang.String toString() {
-        return ((((((("ProteinFamilyModelSet"+" [setName=")+ setName)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((("DomainModelSet"+" [setName=")+ setName)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

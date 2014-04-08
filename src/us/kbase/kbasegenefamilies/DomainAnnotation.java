@@ -15,11 +15,11 @@ import us.kbase.common.service.Tuple5;
 
 
 /**
- * <p>Original spec-file type: ProteinFamilyAnnotation</p>
+ * <p>Original spec-file type: DomainAnnotation</p>
  * <pre>
  * genome_ref genome - reference to genome
- * mapping<contig_id, list<tuple<string feature_id,int feature_start,int feature_stop,list<tuple<pfm_ref,int start_in_feature,int stop_in_feature,float evalue,float bitscore>>>>> data - 
- *         list of entrances of different protein families into proteins of this genome
+ * mapping<contig_id, list<tuple<string feature_id,int feature_start,int feature_stop,list<tuple<domain_model_ref,int start_in_feature,int stop_in_feature,float evalue,float bitscore>>>>> data - 
+ *         list of entrances of different domains into proteins of this genome
  * </pre>
  * 
  */
@@ -29,7 +29,7 @@ import us.kbase.common.service.Tuple5;
     "genome",
     "data"
 })
-public class ProteinFamilyAnnotation {
+public class DomainAnnotation {
 
     @JsonProperty("genome")
     private java.lang.String genome;
@@ -47,7 +47,7 @@ public class ProteinFamilyAnnotation {
         this.genome = genome;
     }
 
-    public ProteinFamilyAnnotation withGenome(java.lang.String genome) {
+    public DomainAnnotation withGenome(java.lang.String genome) {
         this.genome = genome;
         return this;
     }
@@ -62,7 +62,7 @@ public class ProteinFamilyAnnotation {
         this.data = data;
     }
 
-    public ProteinFamilyAnnotation withData(Map<String, List<Tuple4 <String, Long, Long, List<Tuple5 <String, Long, Long, Double, Double>>>>> data) {
+    public DomainAnnotation withData(Map<String, List<Tuple4 <String, Long, Long, List<Tuple5 <String, Long, Long, Double, Double>>>>> data) {
         this.data = data;
         return this;
     }
@@ -79,7 +79,7 @@ public class ProteinFamilyAnnotation {
 
     @Override
     public java.lang.String toString() {
-        return ((((((("ProteinFamilyAnnotation"+" [genome=")+ genome)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((("DomainAnnotation"+" [genome=")+ genome)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
