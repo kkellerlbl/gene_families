@@ -113,7 +113,7 @@ module KBaseGeneFamilies {
 		float bitscore> domain_place;
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,
-		list<domain_place>> domain_annotation_element;
+		list<domain_place>,string best_alignment_with_profile> domain_annotation_element;
 
 	typedef string contig_id;
 
