@@ -6,7 +6,7 @@ module KBaseGeneFamilies {
 	typedef string domain_model_type_ref;
 
 	/*
-		string domain_type - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
+		string type_name - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
 			'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 'TIGR', 'cd', 'pfam', 'smart'. 
 		string version - version of domain type release
 		string date - release date (for example now the last CDD revision date is 
@@ -18,13 +18,14 @@ module KBaseGeneFamilies {
 		string description - short description of this domain type/source
 		int is_full_length - if 1 then there could be found only 1 domain copy of this 
 			type in protein
-		int is_cdd - if 1 then next cdd fields should be used for search
+		int is_cdd - if 1 then cdd fields of domain model should be used for search
 		string cdd_rps_blast_version - now we support RPS-blast version 2.2.29
+		int is_hmm - if 1 then hmm fields of domain model should be used for search
 		@optional source_version
 		@optional cdd_rps_blast_version
 	*/
 	typedef structure {
-		string domain_type;
+		string type_name;
 		string version;
 		string date;
 		string source_name;
@@ -33,7 +34,8 @@ module KBaseGeneFamilies {
 		string description;
 		int is_full_length;
 		int is_cdd;
-		string cdd_rps_blast_version;		
+		string cdd_rps_blast_version;	
+		int is_hmm;	
 	} DomainModelType;
 
 	typedef string domain_name;
@@ -45,7 +47,7 @@ module KBaseGeneFamilies {
 
 	/*
 		domain_name domain_name - domain model name
-		domain_model_type_ref domain_type - type of domain. 
+		domain_model_type_ref domain_type_ref - type of domain. 
 		string description - short description like domain functional role
 		string cdd_scoremat_file - main file used in RPS-blast
 		string cdd_consensus_seq - consensus of domain multiple alignment
@@ -56,7 +58,7 @@ module KBaseGeneFamilies {
 	*/
 	typedef structure {
 		domain_name domain_name;
-		domain_model_type_ref domain_type;
+		domain_model_type_ref domain_type_ref;
 		string description;
 		string cdd_scoremat_gzip_file; 
 		string cdd_consensus_seq;
@@ -79,7 +81,7 @@ module KBaseGeneFamilies {
 		string set_name;
 		list<dms_ref> parent_refs;
 		list<domain_model_type_ref> types;
-		list<domain_model_ref> data;
+		list<domain_model_ref> domain_model_refs;
 	} DomainModelSet;
 
 	/* 

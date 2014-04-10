@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: DomainModel</p>
  * <pre>
  * domain_name domain_name - domain model name
- * domain_model_type_ref domain_type - type of domain. 
+ * domain_model_type_ref domain_type_ref - type of domain. 
  * string description - short description like domain functional role
  * string cdd_scoremat_file - main file used in RPS-blast
  * string cdd_consensus_seq - consensus of domain multiple alignment
@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "domain_name",
-    "domain_type",
+    "domain_type_ref",
     "description",
     "cdd_scoremat_gzip_file",
     "cdd_consensus_seq",
@@ -40,8 +40,8 @@ public class DomainModel {
 
     @JsonProperty("domain_name")
     private String domainName;
-    @JsonProperty("domain_type")
-    private String domainType;
+    @JsonProperty("domain_type_ref")
+    private String domainTypeRef;
     @JsonProperty("description")
     private String description;
     @JsonProperty("cdd_scoremat_gzip_file")
@@ -67,18 +67,18 @@ public class DomainModel {
         return this;
     }
 
-    @JsonProperty("domain_type")
-    public String getDomainType() {
-        return domainType;
+    @JsonProperty("domain_type_ref")
+    public String getDomainTypeRef() {
+        return domainTypeRef;
     }
 
-    @JsonProperty("domain_type")
-    public void setDomainType(String domainType) {
-        this.domainType = domainType;
+    @JsonProperty("domain_type_ref")
+    public void setDomainTypeRef(String domainTypeRef) {
+        this.domainTypeRef = domainTypeRef;
     }
 
-    public DomainModel withDomainType(String domainType) {
-        this.domainType = domainType;
+    public DomainModel withDomainTypeRef(String domainTypeRef) {
+        this.domainTypeRef = domainTypeRef;
         return this;
     }
 
@@ -154,7 +154,7 @@ public class DomainModel {
 
     @Override
     public String toString() {
-        return ((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainType=")+ domainType)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainTypeRef=")+ domainTypeRef)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

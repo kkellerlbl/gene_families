@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: DomainModelType</p>
  * <pre>
- * string domain_type - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
+ * string type_name - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
  *         'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 'TIGR', 'cd', 'pfam', 'smart'. 
  * string version - version of domain type release
  * string date - release date (for example now the last CDD revision date is 
@@ -26,8 +26,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * string description - short description of this domain type/source
  * int is_full_length - if 1 then there could be found only 1 domain copy of this 
  *         type in protein
- * int is_cdd - if 1 then next cdd fields should be used for search
+ * int is_cdd - if 1 then cdd fields of domain model should be used for search
  * string cdd_rps_blast_version - now we support RPS-blast version 2.2.29
+ * int is_hmm - if 1 then hmm fields of domain model should be used for search
  * @optional source_version
  * @optional cdd_rps_blast_version
  * </pre>
@@ -36,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "domain_type",
+    "type_name",
     "version",
     "date",
     "source_name",
@@ -45,12 +46,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "description",
     "is_full_length",
     "is_cdd",
-    "cdd_rps_blast_version"
+    "cdd_rps_blast_version",
+    "is_hmm"
 })
 public class DomainModelType {
 
-    @JsonProperty("domain_type")
-    private String domainType;
+    @JsonProperty("type_name")
+    private String typeName;
     @JsonProperty("version")
     private String version;
     @JsonProperty("date")
@@ -69,20 +71,22 @@ public class DomainModelType {
     private Long isCdd;
     @JsonProperty("cdd_rps_blast_version")
     private String cddRpsBlastVersion;
+    @JsonProperty("is_hmm")
+    private Long isHmm;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("domain_type")
-    public String getDomainType() {
-        return domainType;
+    @JsonProperty("type_name")
+    public String getTypeName() {
+        return typeName;
     }
 
-    @JsonProperty("domain_type")
-    public void setDomainType(String domainType) {
-        this.domainType = domainType;
+    @JsonProperty("type_name")
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 
-    public DomainModelType withDomainType(String domainType) {
-        this.domainType = domainType;
+    public DomainModelType withTypeName(String typeName) {
+        this.typeName = typeName;
         return this;
     }
 
@@ -221,6 +225,21 @@ public class DomainModelType {
         return this;
     }
 
+    @JsonProperty("is_hmm")
+    public Long getIsHmm() {
+        return isHmm;
+    }
+
+    @JsonProperty("is_hmm")
+    public void setIsHmm(Long isHmm) {
+        this.isHmm = isHmm;
+    }
+
+    public DomainModelType withIsHmm(Long isHmm) {
+        this.isHmm = isHmm;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -233,7 +252,7 @@ public class DomainModelType {
 
     @Override
     public String toString() {
-        return ((((((((((((((((((((((("DomainModelType"+" [domainType=")+ domainType)+", version=")+ version)+", date=")+ date)+", sourceName=")+ sourceName)+", sourceUrl=")+ sourceUrl)+", sourceVersion=")+ sourceVersion)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((("DomainModelType"+" [typeName=")+ typeName)+", version=")+ version)+", date=")+ date)+", sourceName=")+ sourceName)+", sourceUrl=")+ sourceUrl)+", sourceVersion=")+ sourceVersion)+", description=")+ description)+", isFullLength=")+ isFullLength)+", isCdd=")+ isCdd)+", cddRpsBlastVersion=")+ cddRpsBlastVersion)+", isHmm=")+ isHmm)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "set_name",
     "parent_refs",
     "types",
-    "data"
+    "domain_model_refs"
 })
 public class DomainModelSet {
 
@@ -39,8 +39,8 @@ public class DomainModelSet {
     private List<String> parentRefs;
     @JsonProperty("types")
     private List<String> types;
-    @JsonProperty("data")
-    private List<String> data;
+    @JsonProperty("domain_model_refs")
+    private List<String> domainModelRefs;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("set_name")
@@ -88,18 +88,18 @@ public class DomainModelSet {
         return this;
     }
 
-    @JsonProperty("data")
-    public List<String> getData() {
-        return data;
+    @JsonProperty("domain_model_refs")
+    public List<String> getDomainModelRefs() {
+        return domainModelRefs;
     }
 
-    @JsonProperty("data")
-    public void setData(List<String> data) {
-        this.data = data;
+    @JsonProperty("domain_model_refs")
+    public void setDomainModelRefs(List<String> domainModelRefs) {
+        this.domainModelRefs = domainModelRefs;
     }
 
-    public DomainModelSet withData(List<String> data) {
-        this.data = data;
+    public DomainModelSet withDomainModelRefs(List<String> domainModelRefs) {
+        this.domainModelRefs = domainModelRefs;
         return this;
     }
 
@@ -115,7 +115,7 @@ public class DomainModelSet {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((("DomainModelSet"+" [setName=")+ setName)+", parentRefs=")+ parentRefs)+", types=")+ types)+", data=")+ data)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("DomainModelSet"+" [setName=")+ setName)+", parentRefs=")+ parentRefs)+", types=")+ types)+", domainModelRefs=")+ domainModelRefs)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
