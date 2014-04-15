@@ -51,10 +51,8 @@ module KBaseGeneFamilies {
 		string description - short description like domain functional role
 		string cdd_scoremat_file - main file used in RPS-blast
 		string cdd_consensus_seq - consensus of domain multiple alignment
-		double cdd_threshold - threshold for RPS-blast (default value is 9.82)
 		@optional cdd_scoremat_gzip_file
 		@optional cdd_consensus_seq
-		@optional cdd_threshold
 	*/
 	typedef structure {
 		domain_name domain_name;
@@ -62,7 +60,6 @@ module KBaseGeneFamilies {
 		string description;
 		string cdd_scoremat_gzip_file; 
 		string cdd_consensus_seq;
-		float cdd_threshold;
 	} DomainModel;
 
 	/* 
@@ -111,22 +108,33 @@ module KBaseGeneFamilies {
 		mapping<genome_ref,list<domain_cluster_element>> data;
 	} DomainCluster;
 
-	typedef tuple<domain_model_ref,int start_in_feature,int stop_in_feature,float evalue,
+	typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
 		float bitscore> domain_place;
 
-	typedef tuple<string feature_id,int feature_start,int feature_stop,
-		list<domain_place>,string best_alignment_with_profile> domain_annotation_element;
+	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
+		mapping<domain_model_ref,list<domain_place>>> annotation_element;
 
 	typedef string contig_id;
 
 	/*
 		genome_ref genome - reference to genome
-		mapping<contig_id, list<domain_annotation_element>> data - 
+		mapping<contig_id, list<annotation_element>> data - 
 			list of entrances of different domains into proteins of annotated genome
+			(annotation_element -> typedef tuple<string feature_id,int feature_start,int feature_stop,
+				int feature_dir,mapping<domain_model_ref,list<domain_place>>>;
+			domain_place -> tuple<int start_in_feature,int stop_in_feature,float evalue,
+				float bitscore>).
+		mapping<contig_id, int> contig_sizes - gene count in every contig
+		mapping<domain_model_ref,mapping<contig_id,mapping<string feature_id,
+			mapping<int start_in_feature,string alignment_with_profile>>>> alignments - 
+				alignments of protein sequences against domain profiles
 	*/
 	typedef structure {
 		genome_ref genome;
-		mapping<contig_id, list<domain_annotation_element>> data;
+		mapping<contig_id, list<annotation_element>> data;
+		mapping<contig_id, int> contig_sizes;
+		mapping<domain_model_ref,mapping<contig_id,mapping<string feature_id,
+			mapping<int start_in_feature,string alignment_with_profile>>>> alignments; 
 	} DomainAnnotation;
 
 	/* 

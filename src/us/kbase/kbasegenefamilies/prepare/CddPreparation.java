@@ -43,10 +43,28 @@ public class CddPreparation {
 	private static final String domainTypeWsType = "KBaseGeneFamilies.DomainModelType";
 	private static final String domainSetWsType = "KBaseGeneFamilies.DomainModelSet";
 	private static final int modelBufferMaxSize = 100;
+	private static final String bacterialDomainSetObjectName = "BacterialProteinDomains.set";
 
 	public static void main(String[] args) throws Exception {
-		//reg();
-		processSmps();
+		reg();
+		//processSmps();
+		//storeBacterialDomainModelSet();
+	}
+	
+	private static void storeBacterialDomainModelSet() throws Exception {
+		WorkspaceClient wc = createWsClient(getAuthToken());
+		List<String> typeRefs = new ArrayList<String>();
+		for (Tuple2<DomainModelType, String> typeDescrRef : loadTypes(domainWsName, wc).values())
+			if (!typeDescrRef.getE1().getTypeName().startsWith("KOG"))
+				typeRefs.add(typeDescrRef.getE2());
+		List<String> setParentRefs = new ArrayList<String>();
+		for (Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info : 
+				wc.listObjects(new ListObjectsParams().withWorkspaces(Arrays.asList(domainWsName)).withType(domainSetWsType))) {
+			String objName = info.getE2();
+			if (!objName.startsWith("KOG"))
+				setParentRefs.add(getRefFromObjectInfo(info));
+		}
+		storeBacterialDomainModelSet(setParentRefs, typeRefs, wc);
 	}
 	
 	private static void processSmps() throws Exception {
@@ -88,20 +106,38 @@ public class CddPreparation {
 				checkFlushBuffer(typeName, buffer, modelRefs, wc, false);
 			}
 		}
+		List<String> setParentRefs = new ArrayList<String>();
+		List<String> bacterialTypeRefs = new ArrayList<String>();
 		for (String typeName : typeNameToModelBuffer.keySet()) {
 			List<DomainModel> buffer = typeNameToModelBuffer.get(typeName);
 			List<String> modelRefs = typeNameToModelRefList.get(typeName);
 			checkFlushBuffer(typeName, buffer, modelRefs, wc, true);
 			System.out.println("Type " + typeName + ": size=" + modelRefs.size());
+			String typeRef = typeToDescrRef.get(typeName).getE2();
 			DomainModelSet dms = new DomainModelSet()
 				.withSetName("Domains of type " + typeName)
 				.withParentRefs(Collections.<String>emptyList())
-				.withTypes(Arrays.asList(typeToDescrRef.get(typeName).getE2()))
+				.withTypes(Arrays.asList(typeRef))
 				.withDomainModelRefs(modelRefs);
 			String domainSetRef = saveIntoWorkspaceAndGetRef(wc, domainWsName, domainSetWsType, 
 					typeName + ".set", dms);
-			System.out.println("Domain set ref: " + domainSetRef);
+			if (!typeName.equals("KOG")) {
+				setParentRefs.add(domainSetRef);
+				bacterialTypeRefs.add(typeRef);
+			}
 		}
+		storeBacterialDomainModelSet(setParentRefs, bacterialTypeRefs, wc);
+	}
+
+	private static void storeBacterialDomainModelSet(List<String> parentRefs, 
+			List<String> typeRefs, WorkspaceClient wc) throws Exception {
+		DomainModelSet dms = new DomainModelSet()
+			.withSetName("Bacterial protein domains")
+			.withParentRefs(parentRefs)
+			.withTypes(typeRefs)
+			.withDomainModelRefs(Collections.<String>emptyList());
+		saveIntoWorkspaceAndGetRef(wc, domainWsName, domainSetWsType, 
+				bacterialDomainSetObjectName, dms);
 	}
 	
 	private static String saveIntoWorkspaceAndGetRef(WorkspaceClient wc, String wsName, String objectType, 
@@ -115,7 +151,6 @@ public class CddPreparation {
 			WorkspaceClient wc, boolean flushAnyway) throws IOException, JsonClientException {
 		if (buffer.size() < modelBufferMaxSize && !flushAnyway)
 			return;
-		// TODO: save into WS
 		List<ObjectSaveData> objects = new ArrayList<ObjectSaveData>();
 		for (DomainModel model : buffer)
 			objects.add(new ObjectSaveData().withType(domainModelWsType)
@@ -141,7 +176,7 @@ public class CddPreparation {
 	private static Map<String, Tuple2<DomainModelType, String>> loadTypes(String wsName, WorkspaceClient wc) throws IOException, JsonClientException {
 		Map<String, Tuple2<DomainModelType, String>> ret = new TreeMap<String, Tuple2<DomainModelType, String>>();
 		for (Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info : 
-			wc.listObjects(new ListObjectsParams().withWorkspaces(Arrays.asList(wsName)).withType(domainTypeWsType))) {
+				wc.listObjects(new ListObjectsParams().withWorkspaces(Arrays.asList(wsName)).withType(domainTypeWsType))) {
 			String ref = getRefFromObjectInfo(info);
 			DomainModelType type = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getData().asClassInstance(DomainModelType.class);
 			Tuple2<DomainModelType, String> typeDescr = new Tuple2<DomainModelType, String>().withE1(type).withE2(ref);
@@ -151,11 +186,11 @@ public class CddPreparation {
 	}
 	
 	private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
-		return info.getE7() + "/" + info.getE1();
+		return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
 	}
 	
 	private static AuthToken getAuthToken() throws Exception {
-		return AuthService.login("nardevuser1", "xxxxx").getToken();
+		return AuthService.login("nardevuser1", "*****").getToken();
 	}
 
 	private static WorkspaceClient createWsClient(AuthToken token) throws Exception {

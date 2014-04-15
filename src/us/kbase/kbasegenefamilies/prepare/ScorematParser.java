@@ -187,7 +187,6 @@ public class ScorematParser {
 		}
 		DomainModel ret = new DomainModel();
 		ret.setCddConsensusSeq(consensus);
-		ret.setCddThreshold(9.82);
 		ret.setDescription(title);
 		ret.setDomainName(getDomainNameForScorematFile(smpFile));
 		ret.setDomainTypeRef(typeDescr.getE2());

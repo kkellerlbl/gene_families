@@ -19,10 +19,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * string description - short description like domain functional role
  * string cdd_scoremat_file - main file used in RPS-blast
  * string cdd_consensus_seq - consensus of domain multiple alignment
- * double cdd_threshold - threshold for RPS-blast (default value is 9.82)
  * @optional cdd_scoremat_gzip_file
  * @optional cdd_consensus_seq
- * @optional cdd_threshold
  * </pre>
  * 
  */
@@ -33,8 +31,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "domain_type_ref",
     "description",
     "cdd_scoremat_gzip_file",
-    "cdd_consensus_seq",
-    "cdd_threshold"
+    "cdd_consensus_seq"
 })
 public class DomainModel {
 
@@ -48,8 +45,6 @@ public class DomainModel {
     private String cddScorematGzipFile;
     @JsonProperty("cdd_consensus_seq")
     private String cddConsensusSeq;
-    @JsonProperty("cdd_threshold")
-    private Double cddThreshold;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     @JsonProperty("domain_name")
@@ -127,21 +122,6 @@ public class DomainModel {
         return this;
     }
 
-    @JsonProperty("cdd_threshold")
-    public Double getCddThreshold() {
-        return cddThreshold;
-    }
-
-    @JsonProperty("cdd_threshold")
-    public void setCddThreshold(Double cddThreshold) {
-        this.cddThreshold = cddThreshold;
-    }
-
-    public DomainModel withCddThreshold(Double cddThreshold) {
-        this.cddThreshold = cddThreshold;
-        return this;
-    }
-
     @JsonAnyGetter
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -154,7 +134,7 @@ public class DomainModel {
 
     @Override
     public String toString() {
-        return ((((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainTypeRef=")+ domainTypeRef)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", cddThreshold=")+ cddThreshold)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainTypeRef=")+ domainTypeRef)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
