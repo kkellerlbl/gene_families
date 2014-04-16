@@ -91,7 +91,7 @@ module KBaseGeneFamilies {
 	*/
 	typedef string domain_cluster_ref;
 
-	typedef tuple<string contig_id,string feature_id,int feature_list_pos,int number_of_copies,
+	typedef tuple<string contig_id,string feature_id,int feature_index,int number_of_copies,
 		float best_evalue,float best_bitscore,string best_profile_alignment> domain_cluster_element;
 
 	/*
@@ -109,7 +109,7 @@ module KBaseGeneFamilies {
 	} DomainCluster;
 
 	typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
-		float bitscore> domain_place;
+		float bitscore, float domain_coverage> domain_place;
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
 		mapping<domain_model_ref,list<domain_place>>> annotation_element;
@@ -117,24 +117,28 @@ module KBaseGeneFamilies {
 	typedef string contig_id;
 
 	/*
-		genome_ref genome - reference to genome
+		genome_ref genome_ref - reference to genome
 		mapping<contig_id, list<annotation_element>> data - 
 			list of entrances of different domains into proteins of annotated genome
 			(annotation_element -> typedef tuple<string feature_id,int feature_start,int feature_stop,
 				int feature_dir,mapping<domain_model_ref,list<domain_place>>>;
 			domain_place -> tuple<int start_in_feature,int stop_in_feature,float evalue,
-				float bitscore>).
-		mapping<contig_id, int> contig_sizes - gene count in every contig
-		mapping<domain_model_ref,mapping<contig_id,mapping<string feature_id,
-			mapping<int start_in_feature,string alignment_with_profile>>>> alignments - 
+				float bitscore,float domain_coverage>).
+		mapping<contig_id, tuple<int size,int features>> contig_to_size_and_feature_count - 
+			feature count and nucleotide size of every contig
+		mapping<string feature_id, tuple<contig_id,int feature_index> feature_to_contig_and_index - 
+			index of every feature in feature list in every contig
+		mapping<domain_model_ref,mapping<string feature_id,
+			mapping<string start_in_feature,string alignment_with_profile>>> alignments - 
 				alignments of protein sequences against domain profiles
 	*/
 	typedef structure {
-		genome_ref genome;
+		genome_ref genome_ref;
 		mapping<contig_id, list<annotation_element>> data;
-		mapping<contig_id, int> contig_sizes;
-		mapping<domain_model_ref,mapping<contig_id,mapping<string feature_id,
-			mapping<int start_in_feature,string alignment_with_profile>>>> alignments; 
+		mapping<contig_id, tuple<int size,int features>> contig_to_size_and_feature_count;
+		mapping<string feature_id, tuple<contig_id,int feature_index>> feature_to_contig_and_index;
+		mapping<domain_model_ref,mapping<string feature_id,
+			mapping<string start_in_feature,string alignment_with_profile>>> alignments; 
 	} DomainAnnotation;
 
 	/* 

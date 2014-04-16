@@ -2,8 +2,10 @@ package us.kbase.kbasegenefamilies.prepare;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 
 import us.kbase.auth.AuthService;
@@ -36,6 +39,7 @@ import us.kbase.workspace.WorkspaceIdentity;
 
 public class CddPreparation {
 	
+	private static final String defaultConfigFile = "config.cfg";
 	private static final String wsUrl = "http://140.221.84.209:7058";  // "https://kbase.us/services/ws/";
 	private static final String scorematFilesDir = "/Users/rsutormin/Work/2014-03-17_trees/smp";
 	private static final String domainWsName = "KBasePublicGeneDomains";
@@ -46,8 +50,8 @@ public class CddPreparation {
 	private static final String bacterialDomainSetObjectName = "BacterialProteinDomains.set";
 
 	public static void main(String[] args) throws Exception {
-		reg();
-		//processSmps();
+		//reg();
+		processSmps();
 		//storeBacterialDomainModelSet();
 	}
 	
@@ -190,7 +194,11 @@ public class CddPreparation {
 	}
 	
 	private static AuthToken getAuthToken() throws Exception {
-		return AuthService.login("nardevuser1", "*****").getToken();
+		Properties props = new Properties();
+		InputStream is = new FileInputStream(new File(defaultConfigFile));
+		props.load(is);
+		is.close();
+		return AuthService.login(props.getProperty("user"), props.getProperty("password")).getToken();
 	}
 
 	private static WorkspaceClient createWsClient(AuthToken token) throws Exception {
