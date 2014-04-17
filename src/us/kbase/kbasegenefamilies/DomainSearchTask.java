@@ -53,7 +53,7 @@ public class DomainSearchTask {
 		this.objectStorage = objectStorage;
 	}
 	
-	public DomainAnnotation runDomainSearch(String token, String domainModelSetRef, String genomeRef) throws Exception {
+	public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(String token, String domainModelSetRef, String genomeRef) throws Exception {
 		domainModelSetRef = correctRef(token, domainModelSetRef);
 		File dbFile = getDomainModelSetDbFile(domainModelSetRef);
 		File mapFile = getDomainModelSetMapFile(domainModelSetRef);
@@ -176,10 +176,12 @@ public class DomainSearchTask {
 					stat[0] += alignedSeq.length();
 				}
 			});
-			DomainAnnotation ret = new DomainAnnotation().withGenomeRef(genomeRef).withData(contig2prots)
+			Tuple2<DomainAnnotation, DomainAlignments> ret = new Tuple2<DomainAnnotation, DomainAlignments>()
+					.withE1(new DomainAnnotation().withGenomeRef(genomeRef).withData(contig2prots)
 					.withContigToSizeAndFeatureCount(contigSizes)
-					.withFeatureToContigAndIndex(featIdToContigFeatIndex)
-					.withAlignments(modelToFeatureToStartToAlignment);
+					.withFeatureToContigAndIndex(featIdToContigFeatIndex))
+					.withE2(new DomainAlignments().withGenomeRef(genomeRef)
+					.withAlignments(modelToFeatureToStartToAlignment));
 			return ret;
 		} finally {
 			try { fastaFile.delete(); } catch (Exception ignore) {}

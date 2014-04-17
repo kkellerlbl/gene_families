@@ -116,6 +116,11 @@ module KBaseGeneFamilies {
 
 	typedef string contig_id;
 
+	/* 
+		@id ws KBaseGeneFamilies.DomainAlignments
+	*/
+	typedef string domain_alignments_ref;
+
 	/*
 		genome_ref genome_ref - reference to genome
 		mapping<contig_id, list<annotation_element>> data - 
@@ -128,18 +133,22 @@ module KBaseGeneFamilies {
 			feature count and nucleotide size of every contig
 		mapping<string feature_id, tuple<contig_id,int feature_index> feature_to_contig_and_index - 
 			index of every feature in feature list in every contig
-		mapping<domain_model_ref,mapping<string feature_id,
-			mapping<string start_in_feature,string alignment_with_profile>>> alignments - 
-				alignments of protein sequences against domain profiles
+		domain_alignments_ref alignments_ref - reference to alignments of protein sequences against 
+			domain profiles
 	*/
 	typedef structure {
 		genome_ref genome_ref;
 		mapping<contig_id, list<annotation_element>> data;
 		mapping<contig_id, tuple<int size,int features>> contig_to_size_and_feature_count;
 		mapping<string feature_id, tuple<contig_id,int feature_index>> feature_to_contig_and_index;
+		domain_alignments_ref alignments_ref; 
+	} DomainAnnotation;
+
+	typedef structure {
+		genome_ref genome_ref;
 		mapping<domain_model_ref,mapping<string feature_id,
 			mapping<string start_in_feature,string alignment_with_profile>>> alignments; 
-	} DomainAnnotation;
+	} DomainAlignments;
 
 	/* 
 		@id ws KBaseGeneFamilies.DomainAnnotation

@@ -215,6 +215,7 @@ public class CddPreparation {
 				"DomainModel", 
 				"DomainModelSet", 
 				"DomainAnnotation", 
+				"DomainAlignments", 
 				"DomainCluster", 
 				"DomainClusterSearchResult"
 		};

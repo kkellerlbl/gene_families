@@ -26,9 +26,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *         feature count and nucleotide size of every contig
  * mapping<string feature_id, tuple<contig_id,int feature_index> feature_to_contig_and_index - 
  *         index of every feature in feature list in every contig
- * mapping<domain_model_ref,mapping<string feature_id,
- *         mapping<string start_in_feature,string alignment_with_profile>>> alignments - 
- *                 alignments of protein sequences against domain profiles
+ * domain_alignments_ref alignments_ref - reference to alignments of protein sequences against 
+ *         domain profiles
  * </pre>
  * 
  */
@@ -39,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "data",
     "contig_to_size_and_feature_count",
     "feature_to_contig_and_index",
-    "alignments"
+    "alignments_ref"
 })
 public class DomainAnnotation {
 
@@ -51,8 +50,8 @@ public class DomainAnnotation {
     private Map<String, us.kbase.common.service.Tuple2 <Long, Long>> contigToSizeAndFeatureCount;
     @JsonProperty("feature_to_contig_and_index")
     private Map<String, us.kbase.common.service.Tuple2 <String, Long>> featureToContigAndIndex;
-    @JsonProperty("alignments")
-    private Map<String, Map<String, Map<String, String>>> alignments;
+    @JsonProperty("alignments_ref")
+    private java.lang.String alignmentsRef;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("genome_ref")
@@ -115,18 +114,18 @@ public class DomainAnnotation {
         return this;
     }
 
-    @JsonProperty("alignments")
-    public Map<String, Map<String, Map<String, String>>> getAlignments() {
-        return alignments;
+    @JsonProperty("alignments_ref")
+    public java.lang.String getAlignmentsRef() {
+        return alignmentsRef;
     }
 
-    @JsonProperty("alignments")
-    public void setAlignments(Map<String, Map<String, Map<String, String>>> alignments) {
-        this.alignments = alignments;
+    @JsonProperty("alignments_ref")
+    public void setAlignmentsRef(java.lang.String alignmentsRef) {
+        this.alignmentsRef = alignmentsRef;
     }
 
-    public DomainAnnotation withAlignments(Map<String, Map<String, Map<String, String>>> alignments) {
-        this.alignments = alignments;
+    public DomainAnnotation withAlignmentsRef(java.lang.String alignmentsRef) {
+        this.alignmentsRef = alignmentsRef;
         return this;
     }
 
@@ -142,7 +141,7 @@ public class DomainAnnotation {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((("DomainAnnotation"+" [genomeRef=")+ genomeRef)+", data=")+ data)+", contigToSizeAndFeatureCount=")+ contigToSizeAndFeatureCount)+", featureToContigAndIndex=")+ featureToContigAndIndex)+", alignments=")+ alignments)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("DomainAnnotation"+" [genomeRef=")+ genomeRef)+", data=")+ data)+", contigToSizeAndFeatureCount=")+ contigToSizeAndFeatureCount)+", featureToContigAndIndex=")+ featureToContigAndIndex)+", alignmentsRef=")+ alignmentsRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
