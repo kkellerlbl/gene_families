@@ -39,8 +39,9 @@ import us.kbase.workspace.WorkspaceIdentity;
 
 public class CddPreparation {
 	
-	private static final String defaultConfigFile = "config.cfg";
-	private static final String wsUrl = "http://140.221.84.209:7058";  // "https://kbase.us/services/ws/";
+	private static final String defaultConfigFile = "config.cfg";	// "config_prod.cfg";
+	private static final String wsUrl = "http://dev04.berkeley.kbase.us:7058";  // "https://kbase.us/services/ws/";
+	//private static final String wsUrl = "https://kbase.us/services/ws/";
 	private static final String scorematFilesDir = "/Users/rsutormin/Work/2014-03-17_trees/smp";
 	private static final String domainWsName = "KBasePublicGeneDomains";
 	private static final String domainModelWsType = "KBaseGeneFamilies.DomainModel";
@@ -50,8 +51,8 @@ public class CddPreparation {
 	private static final String bacterialDomainSetObjectName = "BacterialProteinDomains.set";
 
 	public static void main(String[] args) throws Exception {
-		//reg();
-		processSmps();
+		reg();
+		//processSmps();
 		//storeBacterialDomainModelSet();
 	}
 	
@@ -220,6 +221,8 @@ public class CddPreparation {
 				"DomainClusterSearchResult"
 		};
 		//wc.requestModuleOwnership(module);
+		//if (true)
+		//	return;
 		StringBuilder sb = new StringBuilder();
 		BufferedReader br = new BufferedReader(new FileReader(new File("KBaseGeneFamilies.spec")));
 		while (true) {

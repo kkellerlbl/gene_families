@@ -91,25 +91,45 @@ module KBaseGeneFamilies {
 	*/
 	typedef string domain_cluster_ref;
 
-	typedef tuple<string contig_id,string feature_id,int feature_index,int number_of_copies,
-		float best_evalue,float best_bitscore,string best_profile_alignment> domain_cluster_element;
+	typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
+		float bitscore, float domain_coverage> domain_place;
+
+	typedef tuple<string contig_id,string feature_id,int feature_index,
+		list<domain_place>> domain_cluster_element;
+
+    /* @id ws KBaseTrees.MSA */
+    typedef string ws_alignment_id;
+
+    /* @id ws KBaseTrees.MSASet */
+    typedef string msa_set_ref;
 
 	/*
 		domain_model_ref model - reference to domain model
 		domain_cluster_ref parent_ref - optional reference to parent cluster (containing data 
 			describing some common set of genomes)
 		mapping<genome_ref,list<domain_cluster_element>> data - list of entrances of this domain 
-			into different genomes
+			into different genomes (domain_cluster_element -> ;
+			domain_place -> tuple<int start_in_feature,int stop_in_feature,float evalue,
+				float bitscore,float domain_coverage>).
+		ws_alignment_id msa_ref - reference to multiple alignment object where all domain 
+			sequences are collected (keys in this MSA object are constructed according to this 
+			pattern: <genome_ref>_<feature_id>_<start_in_feature>)
+		msa_set_ref msa_set_ref - alternative way to refer to MSA, it works together with
+			msa_set_index (see details of key structure in description for msa_ref field)
+		int msa_set_index - alternative way to refer to MSA, it works together with
+			msa_set_ref (see details of key structure in description for msa_ref field)
 		@optional parent_ref
+		@optional msa_ref
+		@optional msa_set_ref msa_set_index
 	*/
 	typedef structure {
 		domain_model_ref model;
 		domain_cluster_ref parent_ref;
 		mapping<genome_ref,list<domain_cluster_element>> data;
+		ws_alignment_id msa_ref;
+		msa_set_ref msa_set_ref;
+		int msa_set_index;
 	} DomainCluster;
-
-	typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
-		float bitscore, float domain_coverage> domain_place;
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
 		mapping<domain_model_ref,list<domain_place>>> annotation_element;

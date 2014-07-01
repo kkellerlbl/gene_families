@@ -26,7 +26,6 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.Tuple4;
 import us.kbase.common.service.Tuple5;
-import us.kbase.common.service.UObject;
 import us.kbase.common.utils.AlignUtil;
 import us.kbase.common.utils.CorrectProcess;
 import us.kbase.common.utils.FastaWriter;
@@ -62,7 +61,7 @@ public class DomainSearchTask {
 		final Genome genome = objectStorage.getObjects(token, Arrays.asList(
 				new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
 		System.out.println("Genome: name=" + genome.getScientificName() + ", id=" + genome.getId() + ", ref=" + genomeRef);
-		UObject.getMapper().writeValue(new File(tempDir, "temp.json"), genome);
+		Utils.getMapper().writeValue(new File(tempDir, "temp.json"), genome);
 		String genomeName = genome.getScientificName();
 		File fastaFile = File.createTempFile("proteome", ".fasta", tempDir);
 		File tabFile = null;
@@ -77,6 +76,8 @@ public class DomainSearchTask {
 				for (int pos = 0; pos < genome.getFeatures().size(); pos++) {
 					Feature feat = genome.getFeatures().get(pos);
 					String seq = feat.getProteinTranslation();
+					if (feat.getLocation().size() != 1)
+						continue;
 					Tuple4<String, Long, String, Long> loc = feat.getLocation().get(0);
 					String contigId = loc.getE1();
 					if (seq != null && !seq.isEmpty()) {
@@ -204,14 +205,14 @@ public class DomainSearchTask {
 			Exception, JsonGenerationException {
 		final Map<String,Tuple2<String,String>> modelNameToRefConsensus;
 		if (mapFile.exists() && dbFile.exists()) {
-			modelNameToRefConsensus = UObject.getMapper().readValue(mapFile, new TypeReference<Map<String,Tuple2<String,String>>>() {});
+			modelNameToRefConsensus = Utils.getMapper().readValue(mapFile, new TypeReference<Map<String,Tuple2<String,String>>>() {});
 		} else {
 			List<File> smpFiles = new ArrayList<File>();
 			modelNameToRefConsensus = new TreeMap<String, Tuple2<String,String>>();
 			Map<String,String> modelRefToNameRet = new HashMap<String, String>(); 
 			prepareScoremats(token, domainModelSetRef, smpFiles, modelRefToNameRet, modelNameToRefConsensus);
 			formatRpsDb(smpFiles, dbFile);
-			UObject.getMapper().writeValue(mapFile, modelNameToRefConsensus);
+			Utils.getMapper().writeValue(mapFile, modelNameToRefConsensus);
 		}
 		return modelNameToRefConsensus;
 	}
@@ -225,11 +226,11 @@ public class DomainSearchTask {
 		DomainModelSet set;
 		File domainSetFile = getDomainModelSetJsonFile(domainModelSetRef);
 		if (domainSetFile.exists()) {
-			set = UObject.getMapper().readValue(domainSetFile, DomainModelSet.class);
+			set = Utils.getMapper().readValue(domainSetFile, DomainModelSet.class);
 		} else {
 			set = objectStorage.getObjects(token, Arrays.asList(
 					new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
-			UObject.getMapper().writeValue(domainSetFile, set);
+			Utils.getMapper().writeValue(domainSetFile, set);
 		}
 		for (String parentRef : set.getParentRefs())
 			prepareScoremats(token, parentRef, smpFiles, modelRefToNameRet, optionalModelNameToRefConsensus);
@@ -238,7 +239,7 @@ public class DomainSearchTask {
 			File modelFile = getDomainModelJsonFile(modelRef);
 			if (modelFile.exists())
 				try {
-					DomainModel model = UObject.getMapper().readValue(modelFile, DomainModel.class);
+					DomainModel model = Utils.getMapper().readValue(modelFile, DomainModel.class);
 					prepareModel(modelRef, model, smpFiles, modelRefToNameRet, optionalModelNameToRefConsensus);
 				} catch (Exception ignore) {
 					modelFile.delete();
@@ -254,7 +255,7 @@ public class DomainSearchTask {
 			if (modelRefToNameRet.containsKey(modelRef))
 				return;
 			File modelFile = getDomainModelJsonFile(modelRef);
-			DomainModel model = UObject.getMapper().readValue(modelFile, DomainModel.class);
+			DomainModel model = Utils.getMapper().readValue(modelFile, DomainModel.class);
 			prepareModel(modelRef, model, smpFiles, modelRefToNameRet, optionalModelNameToRefConsensus);			
 		}
 	}
@@ -283,7 +284,7 @@ public class DomainSearchTask {
 			smpW.write(smpText);
 			smpW.close();
 			model.setCddScorematGzipFile("");
-			UObject.getMapper().writeValue(getDomainModelJsonFile(ref), model);
+			Utils.getMapper().writeValue(getDomainModelJsonFile(ref), model);
 		}
 		refs.clear();
 	}
