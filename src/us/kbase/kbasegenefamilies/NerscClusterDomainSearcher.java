@@ -3,10 +3,8 @@ package us.kbase.kbasegenefamilies;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,7 +15,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.zip.GZIPOutputStream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -31,6 +28,7 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
+import us.kbase.kbasegenefamilies.prepare.GenomeAnnotationChache;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.workspace.GetObjectInfoNewParams;
 import us.kbase.workspace.ObjectIdentity;
@@ -145,53 +143,7 @@ public class NerscClusterDomainSearcher {
 	
 	private static void cacheDomainAnnotation(String[] args) throws Exception {
 		Properties props = props(args);
-		File tempDir = new File(get(props, "temp.dir"));
-		File outputDir = new File(tempDir, "annotation");
-		if (!outputDir.exists())
-			outputDir.mkdir();
-		Map<String, String> annotNameToRefMap = new TreeMap<String, String>();
-		WorkspaceClient client = client(props);
-		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, domainAnnotationWsType))
-			annotNameToRefMap.put(refAndName.getE2(), refAndName.getE1());
-		Map<String, String> alignNameToRefMap = new TreeMap<String, String>();
-		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, domainAlignmentsWsType))
-			alignNameToRefMap.put(refAndName.getE2(), refAndName.getE1());
-		int count = 0;
-		File genomeKbIdToRefsFile = new File(outputDir, "genome_refs.json");
-		Map<String, Tuple2<String, String>> genomeKbIdToRefs = new TreeMap<String, Tuple2<String, String>>();
-		if (genomeKbIdToRefsFile.exists()) {
-			Map<String, Tuple2<String, String>> map = UObject.getMapper().readValue(genomeKbIdToRefsFile, new TypeReference<Map<String, Tuple2<String, String>>>() {});
-			genomeKbIdToRefs.putAll(map);
-		}
-		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, genomeWsName, genomeWsType)) {
-			String genomeRef = refAndName.getE1();
-			String genomeObjectName = refAndName.getE2();
-			String genomeAnnotationObjectName = genomeObjectName + ".domains";
-			String genomeAlignmentsObjectName = genomeObjectName + ".alignments";
-			String annotRef = annotNameToRefMap.get(genomeAnnotationObjectName);
-			String alignRef = alignNameToRefMap.get(genomeAlignmentsObjectName);
-			if (annotRef != null && alignRef != null) {
-				genomeKbIdToRefs.put(genomeObjectName, new Tuple2<String, String>().withE1(annotRef).withE2(alignRef));				
-				count++;
-				System.out.println("Genome " + genomeObjectName + ", " + genomeRef);
-				File f1 = new File(outputDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
-				if (!f1.exists()) {
-					OutputStream os = new GZIPOutputStream(new FileOutputStream(f1));
-					UObject.getMapper().writeValue(os, loadData(client, 
-							new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAnnotationObjectName)));
-					os.close();
-				}
-				File f2 = new File(outputDir, "alignments_" + alignRef.replace('/', '_') + ".json.gz");
-				if (!f2.exists()) {
-					OutputStream os = new GZIPOutputStream(new FileOutputStream(f2));
-					UObject.getMapper().writeValue(os, loadData(client, 
-							new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAlignmentsObjectName)));
-					os.close();
-				}
-			}
-		}
-		UObject.getMapper().writeValue(genomeKbIdToRefsFile, genomeKbIdToRefs);
-		System.out.println("Number of genomes with domain annotation: " + count);
+		GenomeAnnotationChache.cacheDomainAnnotation(props);
 	}
 	
 	private static UObject loadData(WorkspaceClient client, ObjectIdentity oi) throws IOException, JsonClientException {
