@@ -61,7 +61,13 @@ public class DomainSearchTask {
 		final Genome genome = objectStorage.getObjects(token, Arrays.asList(
 				new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
 		System.out.println("Genome: name=" + genome.getScientificName() + ", id=" + genome.getId() + ", ref=" + genomeRef);
-		Utils.getMapper().writeValue(new File(tempDir, "temp.json"), genome);
+		//Utils.getMapper().writeValue(new File(tempDir, "temp.json"), genome);
+		return runDomainSearch(genome, genomeRef, dbFile, modelNameToRefConsensus);
+	}
+	
+	
+	public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(Genome genome, String genomeRef, File dbFile, 
+			final Map<String, Tuple2<String, String>> modelNameToRefConsensus) throws Exception {
 		String genomeName = genome.getScientificName();
 		File fastaFile = File.createTempFile("proteome", ".fasta", tempDir);
 		File tabFile = null;
@@ -279,14 +285,20 @@ public class DomainSearchTask {
 		for (ObjectData data : objectStorage.getObjects(token, refs)) {
 			String ref = getRefFromObjectInfo(data.getInfo());
 			DomainModel model = data.getData().asClassInstance(DomainModel.class);
-			String smpText = Utils.unbase64ungzip(model.getCddScorematGzipFile());
-			Writer smpW = new FileWriter(getDomainModelSmpFile(ref));
-			smpW.write(smpText);
-			smpW.close();
+			File smpOutputFile = getDomainModelSmpFile(ref);
+			saveModelSmpIntoFile(model, smpOutputFile);
 			model.setCddScorematGzipFile("");
 			Utils.getMapper().writeValue(getDomainModelJsonFile(ref), model);
 		}
 		refs.clear();
+	}
+
+	public static void saveModelSmpIntoFile(DomainModel model, File smpOutputFile)
+			throws IOException {
+		String smpText = Utils.unbase64ungzip(model.getCddScorematGzipFile());
+		Writer smpW = new FileWriter(smpOutputFile);
+		smpW.write(smpText);
+		smpW.close();
 	}
 	
 	private File getDomainModelJsonFile(String modelRef) {

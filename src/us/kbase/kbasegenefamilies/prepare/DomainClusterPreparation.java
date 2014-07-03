@@ -265,7 +265,7 @@ public class DomainClusterPreparation {
 		}
 	}
 
-	private static <T> T readJsonFromGZip(File f, Class<T> type)
+	public static <T> T readJsonFromGZip(File f, Class<T> type)
 			throws IOException, FileNotFoundException, JsonParseException,
 			JsonMappingException {
 		try {
