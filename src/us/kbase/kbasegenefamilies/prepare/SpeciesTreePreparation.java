@@ -98,13 +98,24 @@ public class SpeciesTreePreparation {
 		}
 		int genomeCount = 0;
 		long timeCommon = System.currentTimeMillis();
-		for (Map.Entry<String, String> genomeEntry : genomeRefToName.entrySet()) {
+		for (Map.Entry<String, String> genomeEntry : genomeRefToName.entrySet()) 
+		try {
 			long time = System.currentTimeMillis();
 			String genomeRef = genomeEntry.getKey();
 			String genomeObjectName = genomeEntry.getValue();
 			if (processedGenomeNames.contains(genomeObjectName)) {
-				System.out.println("Genome [" + genomeObjectName + "] was already processed: " + genomeRef);
+				//System.out.println("Genome [" + genomeObjectName + "] was already processed: " + genomeRef);
 				continue;
+			}
+			String genomeAnnotationObjectName = genomeObjectName + ".domains";
+			String genomeAlignmentsObjectName = genomeObjectName + ".alignments";
+			String annotRef = annotNameToRefMap.get(genomeAnnotationObjectName);
+			String alignRef = alignNameToRefMap.get(genomeAlignmentsObjectName);
+			File f1 = null;
+			File f2 = null;
+			if (annotRef != null && alignRef != null) {
+				f1 = new File(annotDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
+				f2 = new File(annotDir, "alignments_" + alignRef.replace('/', '_') + ".json.gz");
 			}
 			String genomeDomain = null;
 			String genomeScientificName = null;
@@ -122,16 +133,6 @@ public class SpeciesTreePreparation {
 				System.out.println("Genome [" + genomeObjectName + "] is skipped cause domain=[" + genomeDomain + "], " +
 						"time=" + (System.currentTimeMillis() - time));
 				continue;
-			}
-			String genomeAnnotationObjectName = genomeObjectName + ".domains";
-			String genomeAlignmentsObjectName = genomeObjectName + ".alignments";
-			String annotRef = annotNameToRefMap.get(genomeAnnotationObjectName);
-			String alignRef = alignNameToRefMap.get(genomeAlignmentsObjectName);
-			File f1 = null;
-			File f2 = null;
-			if (annotRef != null && alignRef != null) {
-				f1 = new File(annotDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
-				f2 = new File(annotDir, "alignments_" + alignRef.replace('/', '_') + ".json.gz");
 			}
 			DomainAnnotation annot = null;
 			DomainAlignments align = null;
@@ -190,6 +191,7 @@ public class SpeciesTreePreparation {
 				clusterPw.println(cogEntry.getValue().getE2());
 				clusterPw.close();
 			}
+			putGenomeIntoProcessedList(processedGenomesFile, genomeObjectName, genomeScientificName);
 			System.out.println("Genome [" + genomeObjectName + "], cogs_found=" + cogCodeToEvalueAndSeq.size() + ", " +
 					"time=" + (System.currentTimeMillis() - time));		
 			genomeCount++;
@@ -197,6 +199,11 @@ public class SpeciesTreePreparation {
 				System.out.println("Info: " + genomeCount + " genomes were processed in " + (System.currentTimeMillis() - timeCommon) + 
 						" ms (average=" + ((System.currentTimeMillis() - timeCommon) / genomeCount) + ")");
 			}
+		} catch (Throwable e) {
+			String genomeRef = genomeEntry.getKey();
+			String genomeObjectName = genomeEntry.getValue();
+			System.err.println("Error processing genome " + genomeObjectName + " (" + genomeRef + ")");
+			e.printStackTrace();
 		}
 	}
 	

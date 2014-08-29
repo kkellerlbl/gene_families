@@ -1,4 +1,4 @@
-package us.kbase.kbasegenefamilies;
+package us.kbase.kbasegenefamilies.prepare;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +28,12 @@ import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import us.kbase.kbasegenefamilies.prepare.GenomeAnnotationChache;
+import us.kbase.kbasegenefamilies.DomainAlignments;
+import us.kbase.kbasegenefamilies.DomainAnnotation;
+import us.kbase.kbasegenefamilies.DomainModelSet;
+import us.kbase.kbasegenefamilies.DomainModelType;
+import us.kbase.kbasegenefamilies.DomainSearchTask;
+import us.kbase.kbasegenefamilies.ObjectStorage;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.workspace.GetObjectInfoNewParams;
 import us.kbase.workspace.ObjectIdentity;
@@ -43,6 +48,7 @@ public class NerscClusterDomainSearcher {
 	private static final String domainWsName = "KBasePublicGeneDomains";
 	private static final String genomeWsType = "KBaseGenomes.Genome";
 	private static final String defaultDomainSetObjectName = "BacterialProteinDomains.set";
+	private static final String cogPfamDomainSetObjectName = "CogAndPfamDomains.set";
 	private static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
 	private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
 
@@ -143,6 +149,7 @@ public class NerscClusterDomainSearcher {
 	
 	private static void cacheDomainAnnotation(String[] args) throws Exception {
 		Properties props = props(args);
+		//getDomainSetRef(client(props));
 		GenomeAnnotationChache.cacheDomainAnnotation(props);
 	}
 	
@@ -169,6 +176,9 @@ public class NerscClusterDomainSearcher {
 		if (token == null)
 			token = token(props);
 		WorkspaceClient client = client(token);
+		System.out.println(getDomainSetRef(client));
+		if (true)
+			return;
 		if (args.length == 3) {
 			Set<String> allRefs = new TreeSet<String>();
 			Map<String, String> annotNameToRefMap = new TreeMap<String, String>();
@@ -210,7 +220,7 @@ public class NerscClusterDomainSearcher {
 			return;
 		}
 		ObjectStorage objectStorage = DomainSearchTask.createDefaultObjectStorage(client);
-		String domainModelSetRef = domainWsName + "/" + defaultDomainSetObjectName;
+		String domainModelSetRef = getDomainSetRef(client);
 		DomainSearchTask task = new DomainSearchTask(tempDir, objectStorage);
 		if (args.length == 1) {
 			task.prepareDomainModels(token, domainModelSetRef);
@@ -260,6 +270,43 @@ public class NerscClusterDomainSearcher {
 		}
 	}
 
+	private static String getDomainSetRef(WorkspaceClient client) throws Exception {
+		//return domainWsName + "/" + defaultDomainSetObjectName;
+		if (!objectExists(client, domainWsName, cogPfamDomainSetObjectName)) {
+			DomainModelSet rootSet = getObject(client, domainWsName + "/" + defaultDomainSetObjectName, DomainModelSet.class);
+			DomainModelSet cogPfam = new DomainModelSet().withSetName("COG and PFAM domain models")
+					.withDomainModelRefs(new ArrayList<String>()).withParentRefs(new ArrayList<String>())
+					.withTypes(new ArrayList<String>());
+			for (String parRef : rootSet.getParentRefs()) {
+				DomainModelSet subSet = getObject(client, parRef, DomainModelSet.class);
+				if (subSet.getSetName().endsWith(" pfam") || subSet.getSetName().endsWith(" COG"))
+					cogPfam.getParentRefs().add(parRef);
+			}
+			for (String typeRef : rootSet.getTypes()) {
+				DomainModelType type = getObject(client, typeRef, DomainModelType.class);
+				if (type.getTypeName().toLowerCase().contains("cog") || type.getTypeName().toLowerCase().contains("pfam")) {
+					System.out.println("Domain module type: " + type.getTypeName());
+					cogPfam.getTypes().add(typeRef);
+				}
+			}
+			saveObject(client, domainWsName, "KBaseGeneFamilies.DomainModelSet", cogPfamDomainSetObjectName, cogPfam);
+			System.out.println("DomainSet " + cogPfamDomainSetObjectName + " was saved into db");
+		} else {
+			System.out.println("DomainSet " + cogPfamDomainSetObjectName + " is already present in db");
+		}
+		return domainWsName + "/" + cogPfamDomainSetObjectName;
+	}
+	
+	private static <T> T getObject(WorkspaceClient client, String ref, Class<T> type) throws Exception {
+		return client.getObjects(Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getData().asClassInstance(type);
+	}
+	
+	private static void saveObject(WorkspaceClient client, String wsName, String type, String objName, Object data) throws Exception {
+		client.saveObjects(new SaveObjectsParams().withWorkspace(wsName)
+				.withObjects(Arrays.asList(new ObjectSaveData()
+				.withType(type).withName(objName).withData(new UObject(data)))));
+	}
+
 	private static Properties props(String[] args)
 			throws FileNotFoundException, IOException {
 		Properties props = new Properties();
@@ -280,6 +327,7 @@ public class NerscClusterDomainSearcher {
 	private static boolean objectExists(WorkspaceClient client, String wsName, String objectName) throws Exception {
 		List<?> ret = client.getObjectInfoNew(new GetObjectInfoNewParams().withIgnoreErrors(1L).withObjects(
 				Arrays.asList(new ObjectIdentity().withWorkspace(wsName).withName(objectName))));
+		System.out.println(ret);
 		return ret != null && ret.size() > 0 && ret.get(0) != null;
 	}
 

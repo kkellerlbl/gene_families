@@ -58,6 +58,8 @@ public class GenomeAnnotationChache {
 		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, genomeWsName, genomeWsType)) {
 			String genomeRef = refAndName.getE1();
 			String genomeObjectName = refAndName.getE2();
+			if (genomeKbIdToRefs.containsKey(genomeObjectName))
+				continue;
 			String genomeAnnotationObjectName = genomeObjectName + ".domains";
 			String genomeAlignmentsObjectName = genomeObjectName + ".alignments";
 			String annotRef = annotNameToRefMap.get(genomeAnnotationObjectName);
@@ -69,27 +71,47 @@ public class GenomeAnnotationChache {
 				File f1 = new File(outputDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
 				if (!f1.exists()) {
 					long time = System.currentTimeMillis();
-					OutputStream os = new GZIPOutputStream(new FileOutputStream(f1));
-					UObject.getMapper().writeValue(os, loadData(client, 
-							new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAnnotationObjectName)));
-					os.close();
-					time = System.currentTimeMillis() - time;
-					genomeCount++;
-					annotationRetrivalCommonTime += time;
-					if (genomeCount % 100 == 0)
-						System.out.println("Info: average genome annotation loading time: " + (annotationRetrivalCommonTime / genomeCount) + " ms");
+					UObject obj = null;
+					for (int i = 0; i < 5; i++) {
+						try {
+							obj = loadData(client, new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAnnotationObjectName));
+							break;
+						} catch (Exception ex) {
+							System.err.println("Error loading object " + genomeAnnotationObjectName + " (attempt " + (i + 1) + "): " + ex.getMessage());
+						}
+					}
+					if (obj != null) {
+						OutputStream os = new GZIPOutputStream(new FileOutputStream(f1));
+						UObject.getMapper().writeValue(os, obj);
+						os.close();
+						time = System.currentTimeMillis() - time;
+						genomeCount++;
+						annotationRetrivalCommonTime += time;
+						if (genomeCount % 100 == 0)
+							System.out.println("Info: average genome annotation loading time: " + (annotationRetrivalCommonTime / genomeCount) + " ms");
+					}
 				}
 				File f2 = new File(outputDir, "alignments_" + alignRef.replace('/', '_') + ".json.gz");
 				if (!f2.exists()) {
-					OutputStream os = new GZIPOutputStream(new FileOutputStream(f2));
-					UObject.getMapper().writeValue(os, loadData(client, 
-							new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAlignmentsObjectName)));
-					os.close();
+					UObject obj = null;
+					for (int i = 0; i < 5; i++) {
+						try {
+							obj = loadData(client, new ObjectIdentity().withWorkspace(domainWsName).withName(genomeAlignmentsObjectName));
+							break;
+						} catch (Exception ex) {
+							System.err.println("Error loading object " + genomeAlignmentsObjectName + " (attempt " + (i + 1) + "): " + ex.getMessage());
+						}
+					}
+					if (obj != null) {
+						OutputStream os = new GZIPOutputStream(new FileOutputStream(f2));
+						UObject.getMapper().writeValue(os, obj);
+						os.close();
+					}
 				}
 			}
 		}
 		UObject.getMapper().writeValue(genomeKbIdToRefsFile, genomeKbIdToRefs);
-		System.out.println("Number of genomes with domain annotation: " + count);
+		System.out.println("Number of added genomes with domain annotation: " + count);
 	}
 
 	private static UObject loadData(WorkspaceClient client, ObjectIdentity oi) throws IOException, JsonClientException {

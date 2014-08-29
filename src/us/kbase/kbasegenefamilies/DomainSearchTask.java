@@ -210,6 +210,10 @@ public class DomainSearchTask {
 			throws IOException, JsonParseException, JsonMappingException,
 			Exception, JsonGenerationException {
 		final Map<String,Tuple2<String,String>> modelNameToRefConsensus;
+		File dbFilePrepararion = new File(dbFile.getAbsolutePath() + ".preparation");
+		if (dbFilePrepararion.exists()) {
+			System.out.println("Database [" + dbFile.getName() + "] seems to be preparing in parallel thread, so waiting...");
+		}
 		if (mapFile.exists() && dbFile.exists()) {
 			modelNameToRefConsensus = Utils.getMapper().readValue(mapFile, new TypeReference<Map<String,Tuple2<String,String>>>() {});
 		} else {

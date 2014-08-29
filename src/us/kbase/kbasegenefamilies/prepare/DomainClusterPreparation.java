@@ -30,6 +30,7 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthService;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
+import us.kbase.common.service.ServerException;
 import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.Tuple4;
 import us.kbase.common.service.Tuple5;
@@ -38,6 +39,7 @@ import us.kbase.common.service.UnauthorizedException;
 import us.kbase.kbasegenefamilies.DomainAlignments;
 import us.kbase.kbasegenefamilies.DomainAnnotation;
 import us.kbase.kbasegenefamilies.DomainCluster;
+import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
 import us.kbase.kbasegenefamilies.DomainModelSet;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.kbasetrees.MSA;
@@ -52,12 +54,15 @@ public class DomainClusterPreparation {
 	private static final String genomeWsName = "KBasePublicGenomesLoad";
 	private static final String genomeWsType = "KBaseGenomes.Genome";
 	private static final String domainWsName = "KBasePublicGeneDomains";
-	private static final String defaultDomainSetObjectName = "BacterialProteinDomains.set";
+	//private static final String defaultDomainSetObjectName = "BacterialProteinDomains.set";
+	private static final String cogPfamDomainSetObjectName = "CogAndPfamDomains.set";
 	private static final String domainModelWsType = "KBaseGeneFamilies.DomainModel";
 	private static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
 	private static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
 	private static final String domainClusterWsType = "KBaseGeneFamilies.DomainCluster";
 	private static final String msaWsType = "KBaseTrees.MSA";
+	private static final String domainClusterSearchResultType = "KBaseGeneFamilies.DomainClusterSearchResult";
+	private static final String defaultDCSRObjectName = "CogAndPfam.dcsr";
 
 	public static void main(String[] args) throws Exception {
 		Properties props = props(new File("config.cfg"));
@@ -93,11 +98,14 @@ public class DomainClusterPreparation {
 			}
 			br.close();
 		}
-		int genomeCount = 0;
-		long time1 = System.currentTimeMillis();
+		//int genomeCount = 0;
+		//long time1 = System.currentTimeMillis();
 		Map<String, String> genomeRefToName = new TreeMap<String, String>();
 		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, genomeWsName, genomeWsType))
 			genomeRefToName.put(refAndName.getE1(), refAndName.getE2());
+		long lastFlushTime = System.currentTimeMillis();
+		FileCache clusterCache = new FileCache();
+		List<GenomeProcDescr> genomeCache = new ArrayList<GenomeProcDescr>();
 		for (Map.Entry<String, String> refAndName : genomeRefToName.entrySet()) {
 			String genomeRef = refAndName.getKey();
 			if (processedGenomeRefs.contains(genomeRef)) {
@@ -114,8 +122,20 @@ public class DomainClusterPreparation {
 			File f1 = new File(annotDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
 			File f2 = new File(annotDir, "alignments_" + alignRef.replace('/', '_') + ".json.gz");
 			if (f1.exists() && f2.exists()) {
-				DomainAnnotation annot = readJsonFromGZip(f1, DomainAnnotation.class);
-				DomainAlignments align = readJsonFromGZip(f2, DomainAlignments.class);
+				DomainAnnotation annot;
+				try {
+					annot = readJsonFromGZip(f1, DomainAnnotation.class);
+				} catch (Exception ex) {
+					System.err.println("Error loading file " + f1 + ": " + ex.getMessage());
+					continue;
+				}
+				DomainAlignments align;
+				try {
+					align = readJsonFromGZip(f2, DomainAlignments.class);
+				} catch (Exception ex) {
+					System.err.println("Error loading file " + f2 + ": " + ex.getMessage());
+					continue;
+				}
 				if (!annot.getGenomeRef().equals(genomeRef))
 					throw new IllegalStateException();
 				if (!align.getGenomeRef().equals(genomeRef))
@@ -141,10 +161,6 @@ public class DomainClusterPreparation {
 				}
 				int features = 0;
 				int domains = 0;
-				//typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
-				//	float bitscore, float domain_coverage> domain_place;
-				//typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
-				//	mapping<domain_model_ref,list<domain_place>>> annotation_element;
 				for (Map.Entry<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contigElements : annot.getData().entrySet()) {
 					String contigId = contigElements.getKey();
 					for (Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> element : contigElements.getValue()) {
@@ -162,38 +178,32 @@ public class DomainClusterPreparation {
 							if (!domainRefs.contains(domainRef))
 								continue;
 							File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
-							PrintWriter clusterPw = new PrintWriter(new FileWriter(clusterFile, true));
-							try {
-								for (Tuple5<Long, Long, Double, Double, Double> domainPlace : domainPlaces.getValue()) {
-									String alignedSeq = align.getAlignments().get(domainRef).get(featureId).get("" + domainPlace.getE1());
-									if (alignedSeq == null)
-										throw new IllegalStateException("Can't find ailgnment for feature [" + featureId + "] in file: " + f2);
-									clusterPw.println("[*]\t" + genomeRef + "\t" + contigId + "\t" + featureId + "\t" + 
-											featureIndex + "\t" + domainPlace.getE1() + "\t" + domainPlace.getE2() + "\t" + 
-											domainPlace.getE3() + "\t" + domainPlace.getE4() + "\t" + domainPlace.getE5() + "\t" + alignedSeq);
-									domains++;
-								}
-							} finally {
-								clusterPw.close();
+							for (Tuple5<Long, Long, Double, Double, Double> domainPlace : domainPlaces.getValue()) {
+								String alignedSeq = align.getAlignments().get(domainRef).get(featureId).get("" + domainPlace.getE1());
+								if (alignedSeq == null)
+									throw new IllegalStateException("Can't find ailgnment for feature [" + featureId + "] in file: " + f2);
+								clusterCache.addLine(clusterFile, "[*]\t" + genomeRef + "\t" + contigId + "\t" + featureId + "\t" + 
+										featureIndex + "\t" + domainPlace.getE1() + "\t" + domainPlace.getE2() + "\t" + 
+										domainPlace.getE3() + "\t" + domainPlace.getE4() + "\t" + domainPlace.getE5() + "\t" + alignedSeq);
+								domains++;
 							}
 						}
 					}
 				}
-				time2 = System.currentTimeMillis() - time2;
-				putGenomeIntoProcessedList(processedGenomesFile, genomeRef);
-				System.out.println("Genome [" + genomeObjectName + "], features=" + features + ", domains=" + domains + ", time=" + time2);
-				genomeCount++;
-				if (genomeCount % 100 == 0) {
-					System.out.println("Info: " + genomeCount + " genomes were processed in " + (System.currentTimeMillis() - time1) + 
-							" ms (average=" + ((System.currentTimeMillis() - time1) / genomeCount) + ")");
-				}
+				genomeCache.add(new GenomeProcDescr(genomeRef, genomeObjectName, features, domains));
+				if (genomeCache.size() >= 50)
+					lastFlushTime = flushCaches(processedGenomesFile, genomeCache, clusterCache, lastFlushTime);
 			}
 		}
+		flushCaches(processedGenomesFile, genomeCache, clusterCache, lastFlushTime);
 		if (args.length < 1 || !args[0].equals("true"))
 			return;
 		System.out.println("==== Saving domain clusters ====");
 		long time = System.currentTimeMillis();
 		int clusterCount = 0;
+		Map<String, String> domainClusterNameToRef = new TreeMap<String, String>();
+		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, domainClusterWsType))
+			domainClusterNameToRef.put(refAndName.getE2(), refAndName.getE1());
 		for (String domainRef : domainRefs) {
 			File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
 			if (!clusterFile.exists())
@@ -201,13 +211,19 @@ public class DomainClusterPreparation {
 			String domainModelName = domainModelRefToNameMap.get(domainRef);
 			if (domainModelName == null)
 				throw new IllegalStateException("No domain model name for reference: " + domainRef);
+			String domainClusterName = domainModelName + ".cluster";
+			if (domainClusterNameToRef.containsKey(domainClusterName)) {
+				System.out.println("Cluster and msa " + domainClusterName + " were already saved");
+				continue;
+			}
 			System.out.println("Saving cluster and msa for domain model: " + domainModelName + "(" + domainRef + ")");
 			Set<String> genomeRefAndFeatureIdAndStart = new HashSet<String>();
 			Map<String, Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>> genomeRefAndFeatureIdToElement = 
 					new HashMap<String, Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>>();
-			DomainCluster cluster = new DomainCluster().withModel(domainRef).withData(new LinkedHashMap<String, 
+			DomainCluster cluster = new DomainCluster().withModel(domainRef).withData(new TreeMap<String, 
 					List<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>>>());
-			MSA msa = new MSA().withAlignment(new LinkedHashMap<String, String>());
+			MSA msa = new MSA().withAlignment(new TreeMap<String, String>());
+			int alnLen = 0;
 			BufferedReader br = new BufferedReader(new FileReader(clusterFile));
 			try {
 				while (true) {
@@ -233,6 +249,7 @@ public class DomainClusterPreparation {
 					if (genomeRefAndFeatureIdAndStart.contains(key))
 						continue;
 					msa.getAlignment().put(key, alignedSeq);
+					alnLen = alignedSeq.length();
 					List<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>> elements = 
 							cluster.getData().get(genomeRef);
 					if (elements == null) {
@@ -254,17 +271,111 @@ public class DomainClusterPreparation {
 			} finally {
 				br.close();
 			}
-			saveWsObject(client, domainWsName, msaWsType, domainModelName + ".msa", msa);
-			cluster.setMsaRef(domainWsName + "/" + domainModelName + ".msa");
-			saveWsObject(client, domainWsName, domainClusterWsType, domainModelName + ".cluster", cluster);
+			msa.setAlignmentLength((long)alnLen);
+			Exception error = null;
+			for (int i = 0; i < 5; i++) {
+				try {
+					saveObject(client, domainWsName, msaWsType, domainModelName + ".msa", msa);
+					cluster.setMsaRef(domainWsName + "/" + domainModelName + ".msa");
+					saveObject(client, domainWsName, domainClusterWsType, domainClusterName, cluster);
+					error = null;
+					break;
+				} catch (ServerException ex) {
+					System.err.println("Server error for cluster " + domainModelName + ":\n" + ex.getData());
+					error = ex; 
+				}
+			}
+			if (error != null)
+				throw error;
 			clusterCount++;
 			if (clusterCount % 100 == 0) {
 				System.out.println("Info: " + clusterCount + " clusters were processed in " + (System.currentTimeMillis() - time) + 
 						" ms (average=" + ((System.currentTimeMillis() - time) / clusterCount) + ")");
 			}
 		}
+		System.out.println("==== Collecting genome list from domain clusters ====");
+		Map<String, String> genomeRefToAnnotRef = new LinkedHashMap<String, String>();
+		time = System.currentTimeMillis();
+		for (String domainRef : domainRefs) {
+			File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
+			if (!clusterFile.exists())
+				continue;
+			BufferedReader br = new BufferedReader(new FileReader(clusterFile));
+			try {
+				while (true) {
+					String l = br.readLine();
+					if (l == null)
+						break;
+					String[] parts = l.split("\t");
+					if (parts.length != 11) {
+						if (l.lastIndexOf("[*]\t") <= 0)
+							throw new IllegalStateException("Wrong line format: \"" + l + "\"");
+						l = l.substring(l.lastIndexOf("[*]\t"));
+						parts = l.split("\t");
+					}
+					String genomeRef = parts[1];
+					if (genomeRefToAnnotRef.containsKey(genomeRef))
+						continue;
+					String genomeName = genomeRefToName.get(genomeRef);
+					if (genomeName == null) {
+						System.err.println("Unknown genome reference: " + genomeRef);
+						continue;
+					}
+					String genomeAnnotationObjectName = genomeName + ".domains";
+					String annotRef = annotNameToRefMap.get(genomeAnnotationObjectName);
+					if (annotRef == null) {
+						System.err.println("Annotation is not found for genome: " + genomeName + "(" + genomeRef + ")");
+						continue;
+					}
+					genomeRefToAnnotRef.put(genomeRef, annotRef);
+				}
+			} finally {
+				br.close();
+			}
+		}
+		time = System.currentTimeMillis() - time;
+		System.out.println("Time: " + time);
+		domainClusterNameToRef = new TreeMap<String, String>();
+		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, domainClusterWsType))
+			domainClusterNameToRef.put(refAndName.getE2(), refAndName.getE1());
+		Map<String, String> domainModelRefToClusterRef = new TreeMap<>();
+		for (String domainRef : domainRefs) {
+			File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
+			if (!clusterFile.exists())
+				continue;
+			String domainModelName = domainModelRefToNameMap.get(domainRef);
+			if (domainModelName == null)
+				throw new IllegalStateException("No domain model name for reference: " + domainRef);
+			String domainClusterName = domainModelName + ".cluster";
+			if (domainClusterNameToRef.containsKey(domainClusterName)) {
+				String domainClusterRef = domainClusterNameToRef.get(domainClusterName);
+				domainModelRefToClusterRef.put(domainRef, domainClusterRef);
+			} else {
+				System.err.println("Can not find domain cluster for domain: " + domainModelName);
+			}
+		}
+		DomainClusterSearchResult res = new DomainClusterSearchResult();
+		res.setUsedDmsRef(domainWsName + "/" + cogPfamDomainSetObjectName);
+		res.setAnnotationRefs(genomeRefToAnnotRef);
+		res.setDomainClusterRefs(domainModelRefToClusterRef);
+		saveObject(client, domainWsName, domainClusterSearchResultType, defaultDCSRObjectName, res);
+		System.out.println("Domain cluster search result object [" + defaultDCSRObjectName + "] was stored into workspace " + domainWsName);
 	}
 
+	private static long flushCaches(File processedGenomesFile, List<GenomeProcDescr> genomeCache, FileCache clusterCache, long lastFlushTime) throws Exception {
+		if (!genomeCache.isEmpty()) {
+			clusterCache.flush();
+			for (GenomeProcDescr gpd : genomeCache) {
+				putGenomeIntoProcessedList(processedGenomesFile, gpd.genomeRef);
+				System.out.println("Genome [" + gpd.genomeObjectName + "], features=" + gpd.features + ", domains=" + gpd.domains);
+			}
+			System.out.println("Info: " + genomeCache.size() + " genomes were processed in " + (System.currentTimeMillis() - lastFlushTime) + 
+					" ms (average=" + ((System.currentTimeMillis() - lastFlushTime) / genomeCache.size()) + ")");
+			genomeCache.clear();
+		}
+		return System.currentTimeMillis();
+	}
+	
 	public static <T> T readJsonFromGZip(File f, Class<T> type)
 			throws IOException, FileNotFoundException, JsonParseException,
 			JsonMappingException {
@@ -276,12 +387,6 @@ public class DomainClusterPreparation {
 		}
 	}
 
-	private static void saveWsObject(WorkspaceClient client, String wsName, String type, String objName, Object data) throws Exception {
-		client.saveObjects(new SaveObjectsParams().withWorkspace(wsName)
-				.withObjects(Arrays.asList(new ObjectSaveData()
-				.withType(type).withName(objName).withData(new UObject(data)))));
-	}
-
 	private static void putGenomeIntoProcessedList(File processedGenomesFile,
 			String genomeRef) throws IOException {
 		PrintWriter pw = new PrintWriter(new FileWriter(processedGenomesFile, true));
@@ -291,11 +396,13 @@ public class DomainClusterPreparation {
 	
 	private static Set<String> getRestrictedDomainRefs(WorkspaceClient client) throws Exception {
 		Set<String> ret = new HashSet<String>();
-		DomainModelSet rootSet = getObject(client, domainWsName + "/" + defaultDomainSetObjectName, DomainModelSet.class);
+		DomainModelSet rootSet = getObject(client, domainWsName + "/" + cogPfamDomainSetObjectName, DomainModelSet.class);
 		for (String parRef : rootSet.getParentRefs()) {
 			DomainModelSet subSet = getObject(client, parRef, DomainModelSet.class);
-			if (subSet.getSetName().endsWith(" pfam") || subSet.getSetName().endsWith(" COG"))
+			if (subSet.getSetName().endsWith(" pfam") || subSet.getSetName().endsWith(" COG")) {
+				System.out.println("Domain count from [" + subSet.getSetName() + "]: " + subSet.getDomainModelRefs().size());
 				ret.addAll(subSet.getDomainModelRefs());
+			}
 		}
 		return ret;
 	}
@@ -304,6 +411,12 @@ public class DomainClusterPreparation {
 		return client.getObjects(Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getData().asClassInstance(type);
 	}
 	
+	private static void saveObject(WorkspaceClient client, String wsName, String type, String objName, Object data) throws Exception {
+		client.saveObjects(new SaveObjectsParams().withWorkspace(wsName)
+				.withObjects(Arrays.asList(new ObjectSaveData()
+				.withType(type).withName(objName).withData(new UObject(data)))));
+	}
+
 	private static WorkspaceClient client(Properties props)
 			throws UnauthorizedException, IOException, MalformedURLException,
 			TokenFormatException, AuthException {
@@ -339,4 +452,43 @@ public class DomainClusterPreparation {
 		return props;
 	}
 
+	private static class FileCache {
+		Map<File, List<String>> file2lines = new LinkedHashMap<File, List<String>>();
+		
+		public void addLine(File f, String l) {
+			List<String> lines = file2lines.get(f);
+			if (lines == null) {
+				lines = new ArrayList<String>();
+				file2lines.put(f, lines);
+			}
+			lines.add(l);
+		}
+		
+		public void flush() throws IOException {
+			for (File f : file2lines.keySet()) {
+				PrintWriter clusterPw = new PrintWriter(new FileWriter(f, true));
+				try {
+					for (String l : file2lines.get(f))
+						clusterPw.println(l);
+					file2lines.get(f).clear();
+				} finally {
+					clusterPw.close();
+				}
+			}
+		}
+	}
+	
+	private static class GenomeProcDescr {
+		String genomeRef;
+		String genomeObjectName;
+		int features;
+		int domains;
+		
+		public GenomeProcDescr(String genomeRef, String genomeObjectName, int features, int domains) {
+			this.genomeRef = genomeRef;
+			this.genomeObjectName = genomeObjectName;
+			this.features = features;
+			this.domains = domains;
+		}
+	}
 }

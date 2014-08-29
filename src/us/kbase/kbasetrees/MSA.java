@@ -26,8 +26,8 @@ import us.kbase.common.service.Tuple4;
  *         this object adds some new aligned sequences (it could be useful in case of
  *         profile alignments where you don't need to insert new gaps in original msa).
  * @optional name description sequence_type
- * @optional trim_info alignment_attributes row_order
- * @optional source_id source_db
+ * @optional trim_info alignment_attributes row_order 
+ * @optional default_row_labels ws_refs kb_refs
  * @optional parent_msa_ref
  * </pre>
  * 
@@ -43,8 +43,9 @@ import us.kbase.common.service.Tuple4;
     "trim_info",
     "alignment_attributes",
     "row_order",
-    "source_id",
-    "source_db",
+    "default_row_labels",
+    "ws_refs",
+    "kb_refs",
     "parent_msa_ref"
 })
 public class MSA {
@@ -65,10 +66,12 @@ public class MSA {
     private Map<String, String> alignmentAttributes;
     @JsonProperty("row_order")
     private List<String> rowOrder;
-    @JsonProperty("source_id")
-    private java.lang.String sourceId;
-    @JsonProperty("source_db")
-    private java.lang.String sourceDb;
+    @JsonProperty("default_row_labels")
+    private Map<String, String> defaultRowLabels;
+    @JsonProperty("ws_refs")
+    private Map<String, Map<String, List<String>>> wsRefs;
+    @JsonProperty("kb_refs")
+    private Map<String, Map<String, List<String>>> kbRefs;
     @JsonProperty("parent_msa_ref")
     private java.lang.String parentMsaRef;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
@@ -193,33 +196,48 @@ public class MSA {
         return this;
     }
 
-    @JsonProperty("source_id")
-    public java.lang.String getSourceId() {
-        return sourceId;
+    @JsonProperty("default_row_labels")
+    public Map<String, String> getDefaultRowLabels() {
+        return defaultRowLabels;
     }
 
-    @JsonProperty("source_id")
-    public void setSourceId(java.lang.String sourceId) {
-        this.sourceId = sourceId;
+    @JsonProperty("default_row_labels")
+    public void setDefaultRowLabels(Map<String, String> defaultRowLabels) {
+        this.defaultRowLabels = defaultRowLabels;
     }
 
-    public MSA withSourceId(java.lang.String sourceId) {
-        this.sourceId = sourceId;
+    public MSA withDefaultRowLabels(Map<String, String> defaultRowLabels) {
+        this.defaultRowLabels = defaultRowLabels;
         return this;
     }
 
-    @JsonProperty("source_db")
-    public java.lang.String getSourceDb() {
-        return sourceDb;
+    @JsonProperty("ws_refs")
+    public Map<String, Map<String, List<String>>> getWsRefs() {
+        return wsRefs;
     }
 
-    @JsonProperty("source_db")
-    public void setSourceDb(java.lang.String sourceDb) {
-        this.sourceDb = sourceDb;
+    @JsonProperty("ws_refs")
+    public void setWsRefs(Map<String, Map<String, List<String>>> wsRefs) {
+        this.wsRefs = wsRefs;
     }
 
-    public MSA withSourceDb(java.lang.String sourceDb) {
-        this.sourceDb = sourceDb;
+    public MSA withWsRefs(Map<String, Map<String, List<String>>> wsRefs) {
+        this.wsRefs = wsRefs;
+        return this;
+    }
+
+    @JsonProperty("kb_refs")
+    public Map<String, Map<String, List<String>>> getKbRefs() {
+        return kbRefs;
+    }
+
+    @JsonProperty("kb_refs")
+    public void setKbRefs(Map<String, Map<String, List<String>>> kbRefs) {
+        this.kbRefs = kbRefs;
+    }
+
+    public MSA withKbRefs(Map<String, Map<String, List<String>>> kbRefs) {
+        this.kbRefs = kbRefs;
         return this;
     }
 
@@ -250,7 +268,7 @@ public class MSA {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((("MSA"+" [name=")+ name)+", description=")+ description)+", sequenceType=")+ sequenceType)+", alignmentLength=")+ alignmentLength)+", alignment=")+ alignment)+", trimInfo=")+ trimInfo)+", alignmentAttributes=")+ alignmentAttributes)+", rowOrder=")+ rowOrder)+", sourceId=")+ sourceId)+", sourceDb=")+ sourceDb)+", parentMsaRef=")+ parentMsaRef)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((((("MSA"+" [name=")+ name)+", description=")+ description)+", sequenceType=")+ sequenceType)+", alignmentLength=")+ alignmentLength)+", alignment=")+ alignment)+", trimInfo=")+ trimInfo)+", alignmentAttributes=")+ alignmentAttributes)+", rowOrder=")+ rowOrder)+", defaultRowLabels=")+ defaultRowLabels)+", wsRefs=")+ wsRefs)+", kbRefs=")+ kbRefs)+", parentMsaRef=")+ parentMsaRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
