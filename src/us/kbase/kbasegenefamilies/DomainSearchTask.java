@@ -36,32 +36,32 @@ import us.kbase.kbasegenomes.Feature;
 import us.kbase.kbasegenomes.Genome;
 import us.kbase.workspace.ObjectData;
 import us.kbase.workspace.ObjectIdentity;
-import us.kbase.workspace.SaveObjectsParams;
-import us.kbase.workspace.WorkspaceClient;
 
 public class DomainSearchTask {
 	private static String MAX_EVALUE = "1e-05";
 	private static int MIN_COVERAGE = 50;
 	private static final int modelBufferMaxSize = 100;
 	
-	private final File tempDir;
-	private final ObjectStorage objectStorage;
+	public static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
+	public static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
 	
+	protected File tempDir;
+	protected ObjectStorage storage;
+
 	public DomainSearchTask(File tempDir, ObjectStorage objectStorage) {
 		this.tempDir = tempDir;
-		this.objectStorage = objectStorage;
+		this.storage = objectStorage;
 	}
 	
-	public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(String token, String domainModelSetRef, String genomeRef) throws Exception {
+	public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(String token, 
+			String domainModelSetRef, String genomeRef) throws Exception {
 		domainModelSetRef = correctRef(token, domainModelSetRef);
 		File dbFile = getDomainModelSetDbFile(domainModelSetRef);
 		File mapFile = getDomainModelSetMapFile(domainModelSetRef);
 		final Map<String, Tuple2<String, String>> modelNameToRefConsensus = 
 				prepareDomainModels(token, domainModelSetRef, dbFile, mapFile);
-		final Genome genome = objectStorage.getObjects(token, Arrays.asList(
+		final Genome genome = storage.getObjects(token, Arrays.asList(
 				new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
-		System.out.println("Genome: name=" + genome.getScientificName() + ", id=" + genome.getId() + ", ref=" + genomeRef);
-		//Utils.getMapper().writeValue(new File(tempDir, "temp.json"), genome);
 		return runDomainSearch(genome, genomeRef, dbFile, modelNameToRefConsensus);
 	}
 	
@@ -205,6 +205,18 @@ public class DomainSearchTask {
 		prepareDomainModels(token, domainModelSetRef, dbFile, mapFile);
 	}
 	
+	public Map<String, String> loadDomainModelRefToNameMap(String token, 
+			String domainModelSetRef) throws Exception {
+		File dbFile = getDomainModelSetDbFile(domainModelSetRef);
+		File mapFile = getDomainModelSetMapFile(domainModelSetRef);
+		Map<String, Tuple2<String, String>> nameToRef = prepareDomainModels(
+				token, domainModelSetRef, dbFile, mapFile);
+		Map<String, String> ret = new TreeMap<String, String>();
+		for (Map.Entry<String, Tuple2<String, String>> entry : nameToRef.entrySet())
+			ret.put(entry.getValue().getE1(), entry.getKey());
+		return ret;
+	}
+	
 	private Map<String, Tuple2<String, String>> prepareDomainModels(
 			String token, String domainModelSetRef, File dbFile, File mapFile)
 			throws IOException, JsonParseException, JsonMappingException,
@@ -213,22 +225,31 @@ public class DomainSearchTask {
 		File dbFilePrepararion = new File(dbFile.getAbsolutePath() + ".preparation");
 		if (dbFilePrepararion.exists()) {
 			System.out.println("Database [" + dbFile.getName() + "] seems to be preparing in parallel thread, so waiting...");
+			while(true) {
+				Thread.sleep(1000);
+				if (!dbFilePrepararion.exists()) {
+					System.out.println("Database [" + dbFile.getName() + "] seems to be ready to use");
+					break;
+				}
+			}
 		}
 		if (mapFile.exists() && dbFile.exists()) {
 			modelNameToRefConsensus = Utils.getMapper().readValue(mapFile, new TypeReference<Map<String,Tuple2<String,String>>>() {});
 		} else {
+			dbFilePrepararion.createNewFile();
 			List<File> smpFiles = new ArrayList<File>();
 			modelNameToRefConsensus = new TreeMap<String, Tuple2<String,String>>();
 			Map<String,String> modelRefToNameRet = new HashMap<String, String>(); 
 			prepareScoremats(token, domainModelSetRef, smpFiles, modelRefToNameRet, modelNameToRefConsensus);
 			formatRpsDb(smpFiles, dbFile);
 			Utils.getMapper().writeValue(mapFile, modelNameToRefConsensus);
+			dbFilePrepararion.delete();
 		}
 		return modelNameToRefConsensus;
 	}
 	
 	private String correctRef(String token, String ref) throws Exception {
-		return getRefFromObjectInfo(objectStorage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getInfo());
+		return getRefFromObjectInfo(storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getInfo());
 	}
 	
 	private void prepareScoremats(String token, String domainModelSetRef, List<File> smpFiles,
@@ -238,7 +259,7 @@ public class DomainSearchTask {
 		if (domainSetFile.exists()) {
 			set = Utils.getMapper().readValue(domainSetFile, DomainModelSet.class);
 		} else {
-			set = objectStorage.getObjects(token, Arrays.asList(
+			set = storage.getObjects(token, Arrays.asList(
 					new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 			Utils.getMapper().writeValue(domainSetFile, set);
 		}
@@ -286,7 +307,7 @@ public class DomainSearchTask {
 	}
 
 	private void cacheDomainModels(String token, List<ObjectIdentity> refs) throws Exception {
-		for (ObjectData data : objectStorage.getObjects(token, refs)) {
+		for (ObjectData data : storage.getObjects(token, refs)) {
 			String ref = getRefFromObjectInfo(data.getInfo());
 			DomainModel model = data.getData().asClassInstance(DomainModel.class);
 			File smpOutputFile = getDomainModelSmpFile(ref);
@@ -325,7 +346,7 @@ public class DomainSearchTask {
 		return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".map");
 	}
 
-	private File getBinDir() {
+	public File getBinDir() {
 		File ret = new File(tempDir, "bin");
 		if (!ret.exists())
 			ret.mkdir();
@@ -435,22 +456,5 @@ public class DomainSearchTask {
 	
 	public void processRpsOutput(File results, RpsBlastParser.RpsBlastCallback callback) throws Exception {
 		RpsBlastParser.processRpsOutput(results, callback);
-	}
-	
-	public static ObjectStorage createDefaultObjectStorage(final WorkspaceClient client) {
-		return new ObjectStorage() {
-			
-			@Override
-			public List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> saveObjects(
-					String authToken, SaveObjectsParams params) throws Exception {
-				return client.saveObjects(params);
-			}
-			
-			@Override
-			public List<ObjectData> getObjects(String authToken,
-					List<ObjectIdentity> objectIds) throws Exception {
-				return client.getObjects(objectIds);
-			}
-		};
 	}
 }

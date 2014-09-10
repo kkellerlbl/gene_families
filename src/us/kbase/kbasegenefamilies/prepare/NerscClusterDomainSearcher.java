@@ -22,7 +22,6 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthService;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
-import us.kbase.common.service.JsonClientException;
 import us.kbase.common.service.ServerException;
 import us.kbase.common.service.Tuple11;
 import us.kbase.common.service.Tuple2;
@@ -32,6 +31,7 @@ import us.kbase.kbasegenefamilies.DomainAlignments;
 import us.kbase.kbasegenefamilies.DomainAnnotation;
 import us.kbase.kbasegenefamilies.DomainModelSet;
 import us.kbase.kbasegenefamilies.DomainModelType;
+import us.kbase.kbasegenefamilies.SearchDomainsBuilder;
 import us.kbase.kbasegenefamilies.DomainSearchTask;
 import us.kbase.kbasegenefamilies.ObjectStorage;
 import us.kbase.kbasegenefamilies.util.Utils;
@@ -153,10 +153,6 @@ public class NerscClusterDomainSearcher {
 		GenomeAnnotationChache.cacheDomainAnnotation(props);
 	}
 	
-	private static UObject loadData(WorkspaceClient client, ObjectIdentity oi) throws IOException, JsonClientException {
-		return client.getObjects(Arrays.asList(oi)).get(0).getData();
-	}
-	
 	private static void searchDomains(String[] args) throws Exception {
 		if (args.length < 1 || args.length > 3) {
 			System.err.println("Usage: <program> <config_file> [{<genome_ref_list_file> | <core_count> <out_dir>}]");
@@ -177,8 +173,6 @@ public class NerscClusterDomainSearcher {
 			token = token(props);
 		WorkspaceClient client = client(token);
 		System.out.println(getDomainSetRef(client));
-		if (true)
-			return;
 		if (args.length == 3) {
 			Set<String> allRefs = new TreeSet<String>();
 			Map<String, String> annotNameToRefMap = new TreeMap<String, String>();
@@ -219,7 +213,7 @@ public class NerscClusterDomainSearcher {
 			}
 			return;
 		}
-		ObjectStorage objectStorage = DomainSearchTask.createDefaultObjectStorage(client);
+		ObjectStorage objectStorage = SearchDomainsBuilder.createDefaultObjectStorage(client);
 		String domainModelSetRef = getDomainSetRef(client);
 		DomainSearchTask task = new DomainSearchTask(tempDir, objectStorage);
 		if (args.length == 1) {
@@ -316,14 +310,6 @@ public class NerscClusterDomainSearcher {
 		return props;
 	}
 	
-	private static boolean objectExists(Properties props, String wsName, String objectName) throws Exception {
-		return objectExists(token(props), wsName, objectName);
-	}
-
-	private static boolean objectExists(String token, String wsName, String objectName) throws Exception {
-		return objectExists(client(token), wsName, objectName);
-	}
-	
 	private static boolean objectExists(WorkspaceClient client, String wsName, String objectName) throws Exception {
 		List<?> ret = client.getObjectInfoNew(new GetObjectInfoNewParams().withIgnoreErrors(1L).withObjects(
 				Arrays.asList(new ObjectIdentity().withWorkspace(wsName).withName(objectName))));
@@ -331,12 +317,6 @@ public class NerscClusterDomainSearcher {
 		return ret != null && ret.size() > 0 && ret.get(0) != null;
 	}
 
-	private static WorkspaceClient client(Properties props)
-			throws UnauthorizedException, IOException, MalformedURLException,
-			TokenFormatException, AuthException {
-		return client(token(props));
-	}
-	
 	private static WorkspaceClient client(String token)
 			throws UnauthorizedException, IOException, MalformedURLException,
 			TokenFormatException, AuthException {

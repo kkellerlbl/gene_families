@@ -26,14 +26,11 @@ import us.kbase.common.service.Tuple5;
  *                 float bitscore,float domain_coverage>).
  * ws_alignment_id msa_ref - reference to multiple alignment object where all domain 
  *         sequences are collected (keys in this MSA object are constructed according to this 
- *         pattern: <genome_ref>_<feature_id>_<start_in_feature>)
- * msa_set_ref msa_set_ref - alternative way to refer to MSA, it works together with
- *         msa_set_index (see details of key structure in description for msa_ref field)
- * int msa_set_index - alternative way to refer to MSA, it works together with
- *         msa_set_ref (see details of key structure in description for msa_ref field)
+ *         pattern: <genome_ref>_<feature_id>_<start_in_feature>), field is not set in case
+ *         clusters are stored inside DomainClusterSearchResult object, use 'msas' field of
+ *         DomainClusterSearchResult object instead.
  * @optional parent_ref
  * @optional msa_ref
- * @optional msa_set_ref msa_set_index
  * </pre>
  * 
  */
@@ -43,9 +40,7 @@ import us.kbase.common.service.Tuple5;
     "model",
     "parent_ref",
     "data",
-    "msa_ref",
-    "msa_set_ref",
-    "msa_set_index"
+    "msa_ref"
 })
 public class DomainCluster {
 
@@ -57,10 +52,6 @@ public class DomainCluster {
     private Map<String, List<Tuple4 <String, String, Long, List<Tuple5 <Long, Long, Double, Double, Double>>>>> data;
     @JsonProperty("msa_ref")
     private java.lang.String msaRef;
-    @JsonProperty("msa_set_ref")
-    private java.lang.String msaSetRef;
-    @JsonProperty("msa_set_index")
-    private java.lang.Long msaSetIndex;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("model")
@@ -123,36 +114,6 @@ public class DomainCluster {
         return this;
     }
 
-    @JsonProperty("msa_set_ref")
-    public java.lang.String getMsaSetRef() {
-        return msaSetRef;
-    }
-
-    @JsonProperty("msa_set_ref")
-    public void setMsaSetRef(java.lang.String msaSetRef) {
-        this.msaSetRef = msaSetRef;
-    }
-
-    public DomainCluster withMsaSetRef(java.lang.String msaSetRef) {
-        this.msaSetRef = msaSetRef;
-        return this;
-    }
-
-    @JsonProperty("msa_set_index")
-    public java.lang.Long getMsaSetIndex() {
-        return msaSetIndex;
-    }
-
-    @JsonProperty("msa_set_index")
-    public void setMsaSetIndex(java.lang.Long msaSetIndex) {
-        this.msaSetIndex = msaSetIndex;
-    }
-
-    public DomainCluster withMsaSetIndex(java.lang.Long msaSetIndex) {
-        this.msaSetIndex = msaSetIndex;
-        return this;
-    }
-
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -165,7 +126,7 @@ public class DomainCluster {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((("DomainCluster"+" [model=")+ model)+", parentRef=")+ parentRef)+", data=")+ data)+", msaRef=")+ msaRef)+", msaSetRef=")+ msaSetRef)+", msaSetIndex=")+ msaSetIndex)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("DomainCluster"+" [model=")+ model)+", parentRef=")+ parentRef)+", data=")+ data)+", msaRef=")+ msaRef)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

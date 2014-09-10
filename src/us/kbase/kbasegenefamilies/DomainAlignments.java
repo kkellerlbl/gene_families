@@ -13,7 +13,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * <p>Original spec-file type: DomainAlignments</p>
- * 
+ * <pre>
+ * genome_ref genome_ref - reference to genome
+ * alignments - alignments of domain profile against region in feature sequence stored as 
+ *         mapping from domain model reference to inner mapping from feature id to inner-inner 
+ *         mapping from start position of alignment in feature sequence to aligned sequence of 
+ *         domain occurrence (mapping<domain_model_ref, mapping<string feature_id,
+ *                 mapping<string start_in_feature, string alignment_with_profile>>>).
+ * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

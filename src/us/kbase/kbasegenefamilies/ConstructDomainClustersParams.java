@@ -16,12 +16,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: ConstructDomainClustersParams</p>
  * <pre>
  * list<domain_annotation_ref> genome_annotations - annotated genome list
- * dms_ref dms_ref - set of domain models that will be searched in defined genomes (optional 
- *         field, you can use clusters_for_extension instead)
  * dcsr_ref clusters_for_extension - clusters already constructed for another set of genomes 
  *         (public ones for example)
- * list<string> domain_types - type list (if empty list all types are used) defining subset 
- *         of domain models extracted from dms_ref/clusters_for_extension
+ * dms_ref dms_ref - set of domain models that were used for search in defined genomes,
+ *         this value is stored in resulting DomainClusterSearchResult object (optional 
+ *         field, if it's not set then one from clusters_for_extension object will be used)
  * string out_workspace - output workspace
  * string out_result_id - id of resulting object of type DomainSearchResult
  * int is_genome_annotation_stored_outside - defines should genome annotations be stored 
@@ -53,9 +52,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "genome_annotations",
-    "dms_ref",
     "clusters_for_extension",
-    "domain_types",
+    "dms_ref",
     "out_workspace",
     "out_result_id",
     "is_genome_annotation_stored_outside",
@@ -69,12 +67,10 @@ public class ConstructDomainClustersParams {
 
     @JsonProperty("genome_annotations")
     private List<String> genomeAnnotations;
-    @JsonProperty("dms_ref")
-    private java.lang.String dmsRef;
     @JsonProperty("clusters_for_extension")
     private java.lang.String clustersForExtension;
-    @JsonProperty("domain_types")
-    private List<String> domainTypes;
+    @JsonProperty("dms_ref")
+    private java.lang.String dmsRef;
     @JsonProperty("out_workspace")
     private java.lang.String outWorkspace;
     @JsonProperty("out_result_id")
@@ -108,21 +104,6 @@ public class ConstructDomainClustersParams {
         return this;
     }
 
-    @JsonProperty("dms_ref")
-    public java.lang.String getDmsRef() {
-        return dmsRef;
-    }
-
-    @JsonProperty("dms_ref")
-    public void setDmsRef(java.lang.String dmsRef) {
-        this.dmsRef = dmsRef;
-    }
-
-    public ConstructDomainClustersParams withDmsRef(java.lang.String dmsRef) {
-        this.dmsRef = dmsRef;
-        return this;
-    }
-
     @JsonProperty("clusters_for_extension")
     public java.lang.String getClustersForExtension() {
         return clustersForExtension;
@@ -138,18 +119,18 @@ public class ConstructDomainClustersParams {
         return this;
     }
 
-    @JsonProperty("domain_types")
-    public List<String> getDomainTypes() {
-        return domainTypes;
+    @JsonProperty("dms_ref")
+    public java.lang.String getDmsRef() {
+        return dmsRef;
     }
 
-    @JsonProperty("domain_types")
-    public void setDomainTypes(List<String> domainTypes) {
-        this.domainTypes = domainTypes;
+    @JsonProperty("dms_ref")
+    public void setDmsRef(java.lang.String dmsRef) {
+        this.dmsRef = dmsRef;
     }
 
-    public ConstructDomainClustersParams withDomainTypes(List<String> domainTypes) {
-        this.domainTypes = domainTypes;
+    public ConstructDomainClustersParams withDmsRef(java.lang.String dmsRef) {
+        this.dmsRef = dmsRef;
         return this;
     }
 
@@ -285,7 +266,7 @@ public class ConstructDomainClustersParams {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((((("ConstructDomainClustersParams"+" [genomeAnnotations=")+ genomeAnnotations)+", dmsRef=")+ dmsRef)+", clustersForExtension=")+ clustersForExtension)+", domainTypes=")+ domainTypes)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", isGenomeAnnotationStoredOutside=")+ isGenomeAnnotationStoredOutside)+", genomeAnnotationIdPrefix=")+ genomeAnnotationIdPrefix)+", genomeAnnotationIdSuffix=")+ genomeAnnotationIdSuffix)+", isDomainClusterDataStoredOutside=")+ isDomainClusterDataStoredOutside)+", domainClusterDataIdPrefix=")+ domainClusterDataIdPrefix)+", domainClusterDataIdSuffix=")+ domainClusterDataIdSuffix)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((("ConstructDomainClustersParams"+" [genomeAnnotations=")+ genomeAnnotations)+", clustersForExtension=")+ clustersForExtension)+", dmsRef=")+ dmsRef)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", isGenomeAnnotationStoredOutside=")+ isGenomeAnnotationStoredOutside)+", genomeAnnotationIdPrefix=")+ genomeAnnotationIdPrefix)+", genomeAnnotationIdSuffix=")+ genomeAnnotationIdSuffix)+", isDomainClusterDataStoredOutside=")+ isDomainClusterDataStoredOutside)+", domainClusterDataIdPrefix=")+ domainClusterDataIdPrefix)+", domainClusterDataIdSuffix=")+ domainClusterDataIdSuffix)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

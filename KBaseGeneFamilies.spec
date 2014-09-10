@@ -1,3 +1,5 @@
+#include <../trees/KBaseTrees.spec>
+
 module KBaseGeneFamilies {
 
 	/* 
@@ -97,11 +99,11 @@ module KBaseGeneFamilies {
 	typedef tuple<string contig_id,string feature_id,int feature_index,
 		list<domain_place>> domain_cluster_element;
 
-    /* @id ws KBaseTrees.MSA */
-    typedef string ws_alignment_id;
+	/* @id ws KBaseTrees.MSA */
+	typedef string ws_alignment_id;
 
-    /* @id ws KBaseTrees.MSASet */
-    typedef string msa_set_ref;
+	/* @id ws KBaseTrees.MSASet */
+	typedef string msa_set_ref;
 
 	/*
 		domain_model_ref model - reference to domain model
@@ -113,22 +115,17 @@ module KBaseGeneFamilies {
 				float bitscore,float domain_coverage>).
 		ws_alignment_id msa_ref - reference to multiple alignment object where all domain 
 			sequences are collected (keys in this MSA object are constructed according to this 
-			pattern: <genome_ref>_<feature_id>_<start_in_feature>)
-		msa_set_ref msa_set_ref - alternative way to refer to MSA, it works together with
-			msa_set_index (see details of key structure in description for msa_ref field)
-		int msa_set_index - alternative way to refer to MSA, it works together with
-			msa_set_ref (see details of key structure in description for msa_ref field)
+			pattern: <genome_ref>_<feature_id>_<start_in_feature>), field is not set in case
+			clusters are stored inside DomainClusterSearchResult object, use 'msas' field of
+			DomainClusterSearchResult object instead.
 		@optional parent_ref
 		@optional msa_ref
-		@optional msa_set_ref msa_set_index
 	*/
 	typedef structure {
 		domain_model_ref model;
 		domain_cluster_ref parent_ref;
 		mapping<genome_ref,list<domain_cluster_element>> data;
 		ws_alignment_id msa_ref;
-		msa_set_ref msa_set_ref;
-		int msa_set_index;
 	} DomainCluster;
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
@@ -189,43 +186,81 @@ module KBaseGeneFamilies {
 	typedef string dcsr_ref;
 
 	/*
+		Aggreagated data for every genome.
+	*/
+	typedef structure {
+		genome_ref genome_ref;
+		string kbase_id;
+		string scientific_name;
+		int features;
+		int features_with_domains;
+		int domain_models;
+		int domains;
+	} GenomeStat;
+
+	/*
+		Aggregated data for every domain cluster.
+	*/
+	typedef structure {
+		domain_model_ref domain_model_ref;
+		string name;
+		int genomes;
+		int features;
+		int domains;
+	} DomainClusterStat;	
+
+	/*
 		dcsr_ref parent_ref - optional reference to parent domain clusters search results
 		dms_ref used_dms_ref - domain models used for search
 		mapping<genome_ref, DomainAnnotation> annotations - found domains in genomes that user 
 			defined as input data for domain search
+		mapping<genome_ref, DomainAlignment> alignments - alignments for found domains in genomes 
+			that user defined as input data for domain search
 		mapping<genome_ref, domain_annotation_ref> annotation_refs - domain annotation references 
-			in case we don't want to store it inside search result object
+			in case we don't want to store annotations and alignments inside result object
 		mapping<domain_model_ref, DomainCluster> domain_clusters - clusters constructed based on 
 			query_genomes plus genomes from parent object
 		mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs - references to clusters 
 			in case we don't want to store these clusters inside search result object
+		mapping<domain_model_ref, KBaseTrees.MSA> msas - multiple alignment objects where all domain sequences 
+			are collected (keys in these MSA objects are constructed according to such pattern: 
+			<genome_ref>_<feature_id>_<start_in_feature>), in case this field is not set or has
+			empty mapping msa_refs field should be used
+		mapping<domain_model_ref, ws_alignment_id> msa_refs - references to multiple alignment objects 
+			where all domain sequences are collected (keys in these MSA objects are constructed 
+			according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
 		@optional parent_ref
 		@optional annotations
+		@optional alignments
 		@optional annotation_refs
 		@optional domain_clusters
 		@optional domain_cluster_refs
+		@optional msas
+		@optional msa_refs
 	*/
 	typedef structure {
 		dcsr_ref parent_ref;
 		dms_ref used_dms_ref;
 		mapping<genome_ref, DomainAnnotation> annotations;
+		mapping<genome_ref, DomainAlignments> alignments;
 		mapping<genome_ref, domain_annotation_ref> annotation_refs;
+		mapping<genome_ref, GenomeStat> genome_statistics;
 		mapping<domain_model_ref, DomainCluster> domain_clusters;
 		mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs;
+		mapping<domain_model_ref, KBaseTrees.MSA> msas;
+		mapping<domain_model_ref, ws_alignment_id> msa_refs;
+		mapping<domain_model_ref, DomainClusterStat> domain_cluster_statistics;
 	} DomainClusterSearchResult;
 
 	/*
 		genome_ref genome - genome for domain annotation process
 		dms_ref dms_ref - set of domain models that will be searched in defined genome
-		list<string> domain_types - type list (if empty list all types are used) defining subset 
-			of domain models extracted from dms_ref
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainAnnotation
 	*/
 	typedef structure {
 		genome_ref genome;
 		dms_ref dms_ref;
-		list<string> domain_types;
 		string out_workspace;
 		string out_result_id;
 	} SearchDomainsParams;
@@ -235,12 +270,11 @@ module KBaseGeneFamilies {
 
 	/*
 		list<domain_annotation_ref> genome_annotations - annotated genome list
-		dms_ref dms_ref - set of domain models that will be searched in defined genomes (optional 
-			field, you can use clusters_for_extension instead)
 		dcsr_ref clusters_for_extension - clusters already constructed for another set of genomes 
 			(public ones for example)
-		list<string> domain_types - type list (if empty list all types are used) defining subset 
-			of domain models extracted from dms_ref/clusters_for_extension
+		dms_ref dms_ref - set of domain models that were used for search in defined genomes,
+			this value is stored in resulting DomainClusterSearchResult object (optional 
+			field, if it's not set then one from clusters_for_extension object will be used)
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainSearchResult
 		int is_genome_annotation_stored_outside - defines should genome annotations be stored 
@@ -268,9 +302,8 @@ module KBaseGeneFamilies {
 	*/
 	typedef structure {
 		list<domain_annotation_ref> genome_annotations;
-		dms_ref dms_ref;
 		dcsr_ref clusters_for_extension;
-		list<string> domain_types;
+		dms_ref dms_ref;
 		string out_workspace;
 		string out_result_id;
 		int is_genome_annotation_stored_outside;
@@ -286,12 +319,11 @@ module KBaseGeneFamilies {
 
 	/*
 		list<genome_ref> genomes - genome list
-		dms_ref dms_ref - set of domain models that will be searched in defined genomes (optional 
-			field, you can use clusters_for_extension instead)
 		dcsr_ref clusters_for_extension - clusters already constructed for another set of genomes 
 			(public ones for example)
-		list<string> domain_types - type list (if empty list all types are used) defining subset 
-			of domain models extracted from dms_ref/clusters_for_extension
+		dms_ref dms_ref - set of domain models that will be searched in defined genomes (optional 
+			field, you can use only clusters_for_extension or both for clusters extension
+			using narrowed set of domains)
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainSearchResult
 		int is_genome_annotation_stored_outside - defines should genome annotations be stored 
@@ -319,9 +351,8 @@ module KBaseGeneFamilies {
 	*/
 	typedef structure {
 		list<genome_ref> genomes;
-		dms_ref dms_ref;
 		dcsr_ref clusters_for_extension;
-		list<string> domain_types;
+		dms_ref dms_ref;
 		string out_workspace;
 		string out_result_id;
 		int is_genome_annotation_stored_outside;
