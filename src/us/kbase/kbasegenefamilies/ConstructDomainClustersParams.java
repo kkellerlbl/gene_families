@@ -23,13 +23,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *         field, if it's not set then one from clusters_for_extension object will be used)
  * string out_workspace - output workspace
  * string out_result_id - id of resulting object of type DomainSearchResult
- * int is_genome_annotation_stored_outside - defines should genome annotations be stored 
- *         outside of DomainClusterSearchResult object (using annotation_refs rather than 
- *         annotations field), default value is 0
- * string genome_annotation_id_prefix - used for genome domain annotation objects id 
- *         generation ([prefix.]genome_name[.suffix])
- * string genome_annotation_id_suffix - used for genome domain annotation objects id 
- *         generation ([prefix.]genome_name[.suffix])
  * int is_domain_cluster_data_stored_outside - defines should domain clusters be stored 
  *         outside of DomainClusterSearchResult object (using domain_cluster_refs rather than 
  *         domain_clusters field), default value is 0
@@ -39,9 +32,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *         ([prefix.]domain_name[.suffix])
  * @optional dms_ref
  * @optional clusters_for_extension
- * @optional is_genome_annotation_stored_outside
- * @optional genome_annotation_id_prefix
- * @optional genome_annotation_id_suffix
  * @optional is_domain_cluster_data_stored_outside
  * @optional domain_cluster_data_id_prefix
  * @optional domain_cluster_data_id_suffix
@@ -56,9 +46,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
     "dms_ref",
     "out_workspace",
     "out_result_id",
-    "is_genome_annotation_stored_outside",
-    "genome_annotation_id_prefix",
-    "genome_annotation_id_suffix",
     "is_domain_cluster_data_stored_outside",
     "domain_cluster_data_id_prefix",
     "domain_cluster_data_id_suffix"
@@ -75,12 +62,6 @@ public class ConstructDomainClustersParams {
     private java.lang.String outWorkspace;
     @JsonProperty("out_result_id")
     private java.lang.String outResultId;
-    @JsonProperty("is_genome_annotation_stored_outside")
-    private Long isGenomeAnnotationStoredOutside;
-    @JsonProperty("genome_annotation_id_prefix")
-    private java.lang.String genomeAnnotationIdPrefix;
-    @JsonProperty("genome_annotation_id_suffix")
-    private java.lang.String genomeAnnotationIdSuffix;
     @JsonProperty("is_domain_cluster_data_stored_outside")
     private Long isDomainClusterDataStoredOutside;
     @JsonProperty("domain_cluster_data_id_prefix")
@@ -164,51 +145,6 @@ public class ConstructDomainClustersParams {
         return this;
     }
 
-    @JsonProperty("is_genome_annotation_stored_outside")
-    public Long getIsGenomeAnnotationStoredOutside() {
-        return isGenomeAnnotationStoredOutside;
-    }
-
-    @JsonProperty("is_genome_annotation_stored_outside")
-    public void setIsGenomeAnnotationStoredOutside(Long isGenomeAnnotationStoredOutside) {
-        this.isGenomeAnnotationStoredOutside = isGenomeAnnotationStoredOutside;
-    }
-
-    public ConstructDomainClustersParams withIsGenomeAnnotationStoredOutside(Long isGenomeAnnotationStoredOutside) {
-        this.isGenomeAnnotationStoredOutside = isGenomeAnnotationStoredOutside;
-        return this;
-    }
-
-    @JsonProperty("genome_annotation_id_prefix")
-    public java.lang.String getGenomeAnnotationIdPrefix() {
-        return genomeAnnotationIdPrefix;
-    }
-
-    @JsonProperty("genome_annotation_id_prefix")
-    public void setGenomeAnnotationIdPrefix(java.lang.String genomeAnnotationIdPrefix) {
-        this.genomeAnnotationIdPrefix = genomeAnnotationIdPrefix;
-    }
-
-    public ConstructDomainClustersParams withGenomeAnnotationIdPrefix(java.lang.String genomeAnnotationIdPrefix) {
-        this.genomeAnnotationIdPrefix = genomeAnnotationIdPrefix;
-        return this;
-    }
-
-    @JsonProperty("genome_annotation_id_suffix")
-    public java.lang.String getGenomeAnnotationIdSuffix() {
-        return genomeAnnotationIdSuffix;
-    }
-
-    @JsonProperty("genome_annotation_id_suffix")
-    public void setGenomeAnnotationIdSuffix(java.lang.String genomeAnnotationIdSuffix) {
-        this.genomeAnnotationIdSuffix = genomeAnnotationIdSuffix;
-    }
-
-    public ConstructDomainClustersParams withGenomeAnnotationIdSuffix(java.lang.String genomeAnnotationIdSuffix) {
-        this.genomeAnnotationIdSuffix = genomeAnnotationIdSuffix;
-        return this;
-    }
-
     @JsonProperty("is_domain_cluster_data_stored_outside")
     public Long getIsDomainClusterDataStoredOutside() {
         return isDomainClusterDataStoredOutside;
@@ -266,7 +202,7 @@ public class ConstructDomainClustersParams {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((("ConstructDomainClustersParams"+" [genomeAnnotations=")+ genomeAnnotations)+", clustersForExtension=")+ clustersForExtension)+", dmsRef=")+ dmsRef)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", isGenomeAnnotationStoredOutside=")+ isGenomeAnnotationStoredOutside)+", genomeAnnotationIdPrefix=")+ genomeAnnotationIdPrefix)+", genomeAnnotationIdSuffix=")+ genomeAnnotationIdSuffix)+", isDomainClusterDataStoredOutside=")+ isDomainClusterDataStoredOutside)+", domainClusterDataIdPrefix=")+ domainClusterDataIdPrefix)+", domainClusterDataIdSuffix=")+ domainClusterDataIdSuffix)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((("ConstructDomainClustersParams"+" [genomeAnnotations=")+ genomeAnnotations)+", clustersForExtension=")+ clustersForExtension)+", dmsRef=")+ dmsRef)+", outWorkspace=")+ outWorkspace)+", outResultId=")+ outResultId)+", isDomainClusterDataStoredOutside=")+ isDomainClusterDataStoredOutside)+", domainClusterDataIdPrefix=")+ domainClusterDataIdPrefix)+", domainClusterDataIdSuffix=")+ domainClusterDataIdSuffix)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

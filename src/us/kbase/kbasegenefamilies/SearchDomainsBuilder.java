@@ -46,7 +46,8 @@ public class SearchDomainsBuilder extends DefaultTaskBuilder<SearchDomainsParams
 	private void saveResult(String ws, String id, String token, DomainAnnotation annRes, 
 			DomainAlignments alnRes, SearchDomainsParams inputData) throws Exception {
 		ProvenanceAction alnProv = new ProvenanceAction().withDescription(
-				"Domain alignments for genome " + inputData.getGenome()).withService("KBaseGeneFamilies")
+				"Domain alignments for genome " + inputData.getGenome())
+				.withService(KBaseGeneFamiliesServer.SERVICE_REGISTERED_NAME)
 				.withServiceVer(KBaseGeneFamiliesServer.SERVICE_VERSION)
 				.withMethod("construct_multiple_alignment")
 				.withMethodParams(Arrays.asList(new UObject(inputData)));

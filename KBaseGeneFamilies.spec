@@ -277,13 +277,6 @@ module KBaseGeneFamilies {
 			field, if it's not set then one from clusters_for_extension object will be used)
 		string out_workspace - output workspace
 		string out_result_id - id of resulting object of type DomainSearchResult
-		int is_genome_annotation_stored_outside - defines should genome annotations be stored 
-			outside of DomainClusterSearchResult object (using annotation_refs rather than 
-			annotations field), default value is 0
-		string genome_annotation_id_prefix - used for genome domain annotation objects id 
-			generation ([prefix.]genome_name[.suffix])
-		string genome_annotation_id_suffix - used for genome domain annotation objects id 
-			generation ([prefix.]genome_name[.suffix])
 		int is_domain_cluster_data_stored_outside - defines should domain clusters be stored 
 			outside of DomainClusterSearchResult object (using domain_cluster_refs rather than 
 			domain_clusters field), default value is 0
@@ -293,9 +286,6 @@ module KBaseGeneFamilies {
 			([prefix.]domain_name[.suffix])
 		@optional dms_ref
 		@optional clusters_for_extension
-		@optional is_genome_annotation_stored_outside
-		@optional genome_annotation_id_prefix
-		@optional genome_annotation_id_suffix
 		@optional is_domain_cluster_data_stored_outside
 		@optional domain_cluster_data_id_prefix
 		@optional domain_cluster_data_id_suffix
@@ -306,9 +296,6 @@ module KBaseGeneFamilies {
 		dms_ref dms_ref;
 		string out_workspace;
 		string out_result_id;
-		int is_genome_annotation_stored_outside;
-		string genome_annotation_id_prefix;
-		string genome_annotation_id_suffix;
 		int is_domain_cluster_data_stored_outside;
 		string domain_cluster_data_id_prefix;
 		string domain_cluster_data_id_suffix;

@@ -39,7 +39,6 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
 	private static final String defaultWsUrl = "http://dev04.berkeley.kbase.us:7058";
 	//private static final String defaultWsUrl = "https://kbase.us/services/ws/";
     private static final String defaultUjsUrl = "https://kbase.us/services/userandjobstate/";
-    private static final String specServiceName = "gene_families";
     
     public static final String SYS_PROP_KB_DEPLOYMENT_CONFIG = "KB_DEPLOYMENT_CONFIG";
     
@@ -51,6 +50,8 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static final String CFG_PROP_DATA_DIR = "data.dir";
     
     public static final String SERVICE_VERSION = "1.0";
+    public static final String SERVICE_DEPLOYMENT_NAME = "gene_families";
+    public static final String SERVICE_REGISTERED_NAME = "KBaseGeneFamilies";
 
     public static synchronized TaskQueueConfig getTaskConfig() throws Exception {
     	if (taskConfig == null) {
@@ -99,7 +100,8 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static synchronized TaskQueue getTaskQueue() throws Exception {
     	if (taskHolder == null) {
     		TaskQueueConfig cfg = getTaskConfig();
-			taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder());
+			taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder(), new ConstructDomainClustersBuilder(),
+					new SearchDomainsAndConstructClustersBuilder());
 			System.out.println("Initial queue size: " + TaskQueue.getDbConnection(cfg.getQueueDbDir()).collect(
 					"select count(*) from " + TaskQueue.QUEUE_TABLE_NAME, new us.kbase.common.utils.DbConn.SqlLoader<Integer>() {
 				public Integer collectRow(java.sql.ResultSet rs) throws java.sql.SQLException { return rs.getInt(1); }
@@ -111,7 +113,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     private static Map<String, String> loadConfig() throws Exception {
 		String configPath = System.getProperty(SYS_PROP_KB_DEPLOYMENT_CONFIG);
 		System.out.println(KBaseGeneFamiliesServer.class.getName() + ": Deployment config path was defined: " + configPath);
-		return new Ini(new File(configPath)).get(specServiceName);
+		return new Ini(new File(configPath)).get(SERVICE_DEPLOYMENT_NAME);
     }
     
 	private static UserAndJobStateClient createJobClient(String jobSrvUrl, String token) throws IOException, JsonClientException {
@@ -161,6 +163,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public String constructDomainClusters(ConstructDomainClustersParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN construct_domain_clusters
+        getTaskQueue().addTask(params, authPart.toString());
         //END construct_domain_clusters
         return returnVal;
     }
@@ -176,6 +179,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN search_domains_and_construct_clusters
+        getTaskQueue().addTask(params, authPart.toString());
         //END search_domains_and_construct_clusters
         return returnVal;
     }
