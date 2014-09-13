@@ -9,10 +9,11 @@
   <property name="dist" location="dist"/>
   <property name="classes" location="classes"/>
   <property name="jar.file" value="KBaseGeneFamilies.jar"/>
+  <property name="service" value="service"/>
   <property name="war.file" value="KBaseGeneFamilies.war"/>
   <property name="war" value="war"/>
   <property name="war.lib" value="${war}/lib"/>
-
+  <property name="docs" value="docs"/>
   <property name="jarsdir" value="../jars/lib/jars"/>
   <property name="deploycfg" value=""/>
 
@@ -56,6 +57,46 @@
       </fileset>
     </copy>
     <jar destfile="${dist}/${jar.file}" basedir="${classes}"/>
+    <delete dir="${classes}"/>
+  </target>
+
+  <target name="war" depends="compile" description="build the WAR file. Assumes compile has been run">
+    <!-- make the war file for the server-->
+    <mkdir dir="${war}"/>
+    <copy todir="${war}/" flatten="true">
+      <resources>
+        <file file="${service}/web.xml"/>
+      </resources>
+    </copy>
+    <mkdir dir="${war.lib}"/>
+    <copy todir="${war.lib}/" flatten="true">
+      <fileset refid="serverlib"/>
+      <resources>
+        <file file="${dist}/${jar.file}"/>
+      </resources>
+    </copy>
+    <war destfile="${dist}/${war.file}" webxml="${war}/web.xml">
+      <lib dir="${war.lib}"/>
+    </war>
+    <delete dir="${war.lib}"/>
+    <delete dir="${war}"/>
+    <delete dir="${classes}"/>
+  </target>
+
+  <target name="docs" description="prepare documentation">
+    <mkdir dir="${docs}"/>
+  </target>
+
+  <target name="nersc" depends="init" description="compile the source">
+    <!-- Compile class files-->
+    <javac destdir="${classes}" includeantruntime="false" target="1.7" source="1.7" debug="true" classpathref="compile.classpath">
+      <src path="${src}"/>
+    </javac>
+    <!-- Copy resource files-->
+    <copy todir="${classes}">
+      <fileset dir="${src}">
+      </fileset>
+    </copy>
     <unzip dest="${classes}">
         <fileset refid="serverlib"/>
     </unzip>

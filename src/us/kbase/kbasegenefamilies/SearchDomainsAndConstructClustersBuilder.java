@@ -7,10 +7,14 @@ import java.util.List;
 
 import us.kbase.common.service.Tuple2;
 import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder.GenomeAnnotationAlignmentProvider;
+import us.kbase.workspace.ListObjectsParams;
 import us.kbase.workspace.ObjectIdentity;
+import us.kbase.workspace.SubObjectIdentity;
 
 public class SearchDomainsAndConstructClustersBuilder extends DefaultTaskBuilder<SearchDomainsAndConstructClustersParams> {
 
+	private static final String serviceMethod = "search_domains_and_construct_clusters";
+	
 	public SearchDomainsAndConstructClustersBuilder() {
 	}
 	
@@ -39,6 +43,7 @@ public class SearchDomainsAndConstructClustersBuilder extends DefaultTaskBuilder
 			String outRef) throws Exception {
 		List<Tuple2<DomainAnnotation, DomainAlignments>> annsAlns = 
 				new ArrayList<Tuple2<DomainAnnotation, DomainAlignments>>();
+		List<String> annRefs = new ArrayList<String>();
 		String dmsRef = inputData.getDmsRef();
 		if (dmsRef == null) {
 			if (inputData.getClustersForExtension() == null)
@@ -49,14 +54,31 @@ public class SearchDomainsAndConstructClustersBuilder extends DefaultTaskBuilder
 			dmsRef = parent.getUsedDmsRef();
 		}
 		DomainSearchTask dst = new DomainSearchTask(tempDir, storage);
+		boolean isGenomeAnnotationStoredOutside = inputData.getIsGenomeAnnotationStoredOutside() != null && 
+				inputData.getIsGenomeAnnotationStoredOutside() != 0L;
 		for (String genomeRef : inputData.getGenomes()) {
 			Tuple2<DomainAnnotation, DomainAlignments> annAln = dst.runDomainSearch(token, dmsRef, genomeRef);
-			annsAlns.add(annAln);
+			if (isGenomeAnnotationStoredOutside) {
+				String genomeObjectName = storage.getObjectSubset(token, Arrays.asList(new SubObjectIdentity().withRef(
+						genomeRef).withIncluded(Arrays.asList("id")))).get(0).getInfo().getE2();
+				String pref = inputData.getGenomeAnnotationIdPrefix();
+				if (pref == null)
+					pref = "";
+				String suff = inputData.getGenomeAnnotationIdSuffix();
+				if (suff == null)
+					suff = "";
+				String annObjName = pref + genomeObjectName + suff;
+				String annRef = SearchDomainsBuilder.saveAnnotation(storage, token, inputData.getOutWorkspace(), 
+						annObjName, annAln.getE1(), annAln.getE2(), genomeRef, inputData, serviceMethod);
+				annRefs.add(annRef);
+			} else {
+				annsAlns.add(annAln);
+			}
 		}
 		GenomeAnnotationAlignmentProvider annAlnProv = new GenomeAnnotationAlignmentProvider(
-				storage, token, null, annsAlns);
+				storage, token, annRefs, annsAlns);
 		ConstructDomainClustersBuilder.constructClusters(storage, token, tempDir, jobId, 
-				"search_domains_and_construct_clusters", inputData, 
+				serviceMethod, inputData, 
 				annAlnProv, inputData.getDmsRef(), inputData.getClustersForExtension(), 
 				inputData.getOutWorkspace(), inputData.getOutResultId(), 
 				inputData.getIsDomainClusterDataStoredOutside() != null && 

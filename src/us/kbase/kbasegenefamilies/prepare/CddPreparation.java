@@ -212,13 +212,13 @@ public class CddPreparation {
 		WorkspaceClient wc = createWsClient(getAuthToken());
 		String module = "KBaseGeneFamilies";
 		String[] types = {
-				"DomainModelType", 
-				"DomainModel", 
-				"DomainModelSet", 
-				"DomainAnnotation", 
-				"DomainAlignments", 
-				"DomainCluster", 
-				"DomainClusterSearchResult"
+//				"DomainModelType", 
+//				"DomainModel", 
+//				"DomainModelSet", 
+//				"DomainAnnotation", 
+//				"DomainAlignments", 
+//				"DomainCluster", 
+//				"DomainClusterSearchResult"
 		};
 		//wc.requestModuleOwnership(module);
 		//if (true)

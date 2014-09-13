@@ -45,24 +45,31 @@ public class SearchDomainsBuilder extends DefaultTaskBuilder<SearchDomainsParams
 	
 	private void saveResult(String ws, String id, String token, DomainAnnotation annRes, 
 			DomainAlignments alnRes, SearchDomainsParams inputData) throws Exception {
-		ProvenanceAction alnProv = new ProvenanceAction().withDescription(
-				"Domain alignments for genome " + inputData.getGenome())
-				.withService(KBaseGeneFamiliesServer.SERVICE_REGISTERED_NAME)
-				.withServiceVer(KBaseGeneFamiliesServer.SERVICE_VERSION)
-				.withMethod("construct_multiple_alignment")
-				.withMethodParams(Arrays.asList(new UObject(inputData)));
-		String alignmentsRef = DomainSearchTask.getRefFromObjectInfo(storage.saveObjects(token,
+		saveAnnotation(storage, token, ws, id, annRes, alnRes, inputData.getGenome(), inputData, "construct_multiple_alignment");
+	}
+	
+	public static String saveAnnotation(ObjectStorage storage, String token, String ws, String id, 
+			DomainAnnotation annRes, DomainAlignments alnRes, String genomeRef, 
+			Object inputData, String serviceMethod) throws Exception {
+		String alignmentsRef = DomainSearchTask.getRefFromObjectInfo(
+				storage.saveObjects(token,
 				new SaveObjectsParams().withWorkspace(ws).withObjects(
 				Arrays.asList(new ObjectSaveData().withType(DomainSearchTask.domainAlignmentsWsType)
 						.withName(id + ".aln").withData(new UObject(alnRes))
-						.withProvenance(Arrays.asList(alnProv))))).get(0));
+						.withProvenance(Arrays.asList(new ProvenanceAction().withDescription(
+								"Domain alignments for genome " + genomeRef)
+								.withService(KBaseGeneFamiliesServer.SERVICE_REGISTERED_NAME)
+								.withServiceVer(KBaseGeneFamiliesServer.SERVICE_VERSION)
+								.withMethod(serviceMethod)
+								.withMethodParams(Arrays.asList(new UObject(inputData)))))))).get(0));
 		annRes.setAlignmentsRef(alignmentsRef);
 		ObjectSaveData data = new ObjectSaveData().withData(new UObject(annRes))
 				.withType(DomainSearchTask.domainAnnotationWsType)
 				.withProvenance(Arrays.asList(new ProvenanceAction()
 				.withDescription("Domain annotation was constructed using rps-blast program")
-				.withService("KBaseGeneFamilies").withServiceVer(KBaseGeneFamiliesServer.SERVICE_VERSION)
-				.withMethod("construct_multiple_alignment")
+				.withService(KBaseGeneFamiliesServer.SERVICE_REGISTERED_NAME)
+				.withServiceVer(KBaseGeneFamiliesServer.SERVICE_VERSION)
+				.withMethod(serviceMethod)
 				.withMethodParams(Arrays.asList(new UObject(inputData)))));
 		try {
 			long objid = Long.parseLong(id);
@@ -70,8 +77,7 @@ public class SearchDomainsBuilder extends DefaultTaskBuilder<SearchDomainsParams
 		} catch (NumberFormatException ex) {
 			data.withName(id);
 		}
-		storage.saveObjects(token, new SaveObjectsParams().withWorkspace(ws).withObjects(
-				Arrays.asList(data)));
+		return DomainSearchTask.getRefFromObjectInfo(storage.saveObjects(token, new SaveObjectsParams().withWorkspace(ws).withObjects(
+				Arrays.asList(data))).get(0));
 	}
-
 }

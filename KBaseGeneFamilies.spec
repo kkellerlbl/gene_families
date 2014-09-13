@@ -152,6 +152,7 @@ module KBaseGeneFamilies {
 			index of every feature in feature list in every contig
 		domain_alignments_ref alignments_ref - reference to alignments of protein sequences against 
 			domain profiles
+		@optional alignments_ref
 	*/
 	typedef structure {
 		genome_ref genome_ref;
@@ -230,6 +231,7 @@ module KBaseGeneFamilies {
 			where all domain sequences are collected (keys in these MSA objects are constructed 
 			according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
 		@optional parent_ref
+		@optional used_dms_ref
 		@optional annotations
 		@optional alignments
 		@optional annotation_refs

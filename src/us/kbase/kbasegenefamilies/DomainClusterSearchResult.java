@@ -35,6 +35,7 @@ import us.kbase.kbasetrees.MSA;
  *         where all domain sequences are collected (keys in these MSA objects are constructed 
  *         according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
  * @optional parent_ref
+ * @optional used_dms_ref
  * @optional annotations
  * @optional alignments
  * @optional annotation_refs

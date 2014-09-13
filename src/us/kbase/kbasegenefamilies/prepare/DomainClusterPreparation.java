@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.zip.GZIPInputStream;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -40,7 +41,9 @@ import us.kbase.kbasegenefamilies.DomainAlignments;
 import us.kbase.kbasegenefamilies.DomainAnnotation;
 import us.kbase.kbasegenefamilies.DomainCluster;
 import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
+import us.kbase.kbasegenefamilies.DomainClusterStat;
 import us.kbase.kbasegenefamilies.DomainModelSet;
+import us.kbase.kbasegenefamilies.GenomeStat;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.kbasetrees.MSA;
 import us.kbase.workspace.ObjectIdentity;
@@ -293,10 +296,16 @@ public class DomainClusterPreparation {
 						" ms (average=" + ((System.currentTimeMillis() - time) / clusterCount) + ")");
 			}
 		}
-		System.out.println("==== Collecting genome list from domain clusters ====");
+		System.out.println("==== Collecting genome list and domain stat from domain clusters ====");
 		Map<String, String> genomeRefToAnnotRef = new LinkedHashMap<String, String>();
 		time = System.currentTimeMillis();
+		Map<String, DomainClusterStat> clusterStat = new TreeMap<String, DomainClusterStat>();
 		for (String domainRef : domainRefs) {
+			Map<String, Map<String, Set<Integer>>> genomeRefToFeatureIdToStart = new TreeMap<String, Map<String, Set<Integer>>>();
+			DomainClusterStat stat = new DomainClusterStat().withDomainModelRef(domainRef)
+					.withName(domainModelRefToNameMap.get(domainRef));
+			int features = 0;
+			int domains = 0;
 			File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
 			if (!clusterFile.exists())
 				continue;
@@ -328,17 +337,85 @@ public class DomainClusterPreparation {
 						continue;
 					}
 					genomeRefToAnnotRef.put(genomeRef, annotRef);
+					String featureId = parts[3]; 
+					int start = Integer.parseInt(parts[5]);
+					Map<String, Set<Integer>> startsInFeatures = genomeRefToFeatureIdToStart.get(genomeRef);
+					if (startsInFeatures == null) {
+						startsInFeatures = new TreeMap<String, Set<Integer>>();
+						genomeRefToFeatureIdToStart.put(genomeRef, startsInFeatures);
+					}
+					Set<Integer> startsInFeature = startsInFeatures.get(featureId);
+					if (startsInFeature == null) {
+						startsInFeature = new TreeSet<Integer>();
+						startsInFeatures.put(featureId, startsInFeature);
+						features++;
+					}
+					if (!startsInFeature.contains(start)) {
+						startsInFeature.add(start);
+						domains++;
+					}
 				}
 			} finally {
 				br.close();
 			}
+			stat.setGenomes((long)genomeRefToFeatureIdToStart.size());
+			stat.setFeatures((long)features);
+			stat.setDomains((long)domains);
+			clusterStat.put(domainRef, stat);
+			if (clusterStat.size() % 1000 == 0)
+				System.out.println("\t" + clusterStat.size() + " domains were processed");
+		}
+		time = System.currentTimeMillis() - time;
+		System.out.println("Time: " + time);
+		System.out.println("==== Collecting genome stat from annotations ====");
+		time = System.currentTimeMillis();
+		Map<String, GenomeStat> genomeStat = new TreeMap<String, GenomeStat>();
+		for (String genomeRef : genomeRefToAnnotRef.keySet()) {
+			String annotRef = genomeRefToAnnotRef.get(genomeRef);
+			File f1 = new File(annotDir, "domains_" + annotRef.replace('/', '_') + ".json.gz");
+			DomainAnnotation annot = readJsonFromGZip(f1, DomainAnnotation.class);
+			int features = 0;
+			int featuresWithDomains = 0;
+			int domains = 0;
+			Set<String> domainModels = new TreeSet<String>();
+			for (Map.Entry<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contigElements : annot.getData().entrySet()) {
+				for (Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> element : contigElements.getValue()) {
+					String featureId = element.getE1();
+					features++;
+					if (annot.getFeatureToContigAndIndex().get(featureId) == null)
+						continue;
+					int domainsInFeature = 0;
+					for (Map.Entry<String, List<Tuple5<Long, Long, Double, Double, Double>>> domainPlaces : element.getE5().entrySet()) {
+						String domainRef = domainPlaces.getKey();
+						if (!domainRefs.contains(domainRef))
+							continue;
+						domainModels.add(domainRef);
+						domains += domainPlaces.getValue().size();
+						domainsInFeature += domainPlaces.getValue().size();
+					}
+					if (domainsInFeature > 0)
+						featuresWithDomains++;
+				}
+			}
+			String[] idAndName = getGenomeIdAndScientificName(client, genomeRef);
+			GenomeStat stat = new GenomeStat().withGenomeRef(genomeRef).withKbaseId(idAndName[0])
+					.withScientificName(idAndName[1]).withFeatures((long)features)
+					.withFeaturesWithDomains((long)featuresWithDomains).withDomains((long)domains)
+					.withDomainModels((long)domainModels.size());
+			genomeStat.put(genomeRef, stat);
+			if (genomeStat.size() % 1000 == 0)
+				System.out.println("\t" + genomeStat.size() + " genomes were processed");
 		}
 		time = System.currentTimeMillis() - time;
 		System.out.println("Time: " + time);
 		domainClusterNameToRef = new TreeMap<String, String>();
 		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, domainClusterWsType))
 			domainClusterNameToRef.put(refAndName.getE2(), refAndName.getE1());
-		Map<String, String> domainModelRefToClusterRef = new TreeMap<>();
+		Map<String, String> msaNameToRef = new TreeMap<String, String>();
+		for (Tuple2<String, String> refAndName : Utils.listAllObjectsRefAndName(client, domainWsName, msaWsType))
+			msaNameToRef.put(refAndName.getE2(), refAndName.getE1());
+		Map<String, String> domainModelRefToClusterRef = new TreeMap<String, String>();
+		Map<String, String> domainModelRefToMsaRef = new TreeMap<String, String>();
 		for (String domainRef : domainRefs) {
 			File clusterFile = new File(clusterDir, "cluster_" + domainRef.replace('/', '_') + ".txt");
 			if (!clusterFile.exists())
@@ -353,15 +430,35 @@ public class DomainClusterPreparation {
 			} else {
 				System.err.println("Can not find domain cluster for domain: " + domainModelName);
 			}
+			String msaObjName = domainModelName + ".msa";
+			String msaRef = msaNameToRef.get(msaObjName);
+			if (msaRef == null) {
+				System.err.println("Can not find MSA for domain: " + domainModelName);
+			} else {
+				domainModelRefToMsaRef.put(domainRef, msaRef);
+			}
 		}
 		DomainClusterSearchResult res = new DomainClusterSearchResult();
 		res.setUsedDmsRef(domainWsName + "/" + cogPfamDomainSetObjectName);
 		res.setAnnotationRefs(genomeRefToAnnotRef);
 		res.setDomainClusterRefs(domainModelRefToClusterRef);
+		res.setMsaRefs(domainModelRefToMsaRef);
+		res.setGenomeStatistics(genomeStat);
+		res.setDomainClusterStatistics(clusterStat);
 		saveObject(client, domainWsName, domainClusterSearchResultType, defaultDCSRObjectName, res);
 		System.out.println("Domain cluster search result object [" + defaultDCSRObjectName + "] was stored into workspace " + domainWsName);
 	}
 
+	private static String[] getGenomeIdAndScientificName(WorkspaceClient client,
+			String genomeRef) throws Exception {
+		Map<String, String> genome = client.getObjectSubset(Arrays.asList(
+				new SubObjectIdentity().withRef(genomeRef).withIncluded(Arrays.asList(
+						"id", "scientific_name")))).get(0).getData().asInstance();
+		String id = genome.get("id");
+		String name = genome.get("scientific_name");
+		return new String[] {id, name};
+	}
+	
 	private static long flushCaches(File processedGenomesFile, List<GenomeProcDescr> genomeCache, FileCache clusterCache, long lastFlushTime) throws Exception {
 		if (!genomeCache.isEmpty()) {
 			clusterCache.flush();

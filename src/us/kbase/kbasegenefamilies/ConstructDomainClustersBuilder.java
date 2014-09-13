@@ -127,6 +127,7 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 				int features = 0;
 				int featuresWithDomains = 0;
 				int domains = 0;
+				Set<String> domainModelsForGenome = new TreeSet<String>();
 				// Iterate over contigs
 				for (Map.Entry<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contigElements : annot.getData().entrySet()) {
 					String contigId = contigElements.getKey();
@@ -156,6 +157,7 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 								domains++;
 								featureWithDomains = true;
 								domainRefs.add(domainRef);
+								domainModelsForGenome.add(domainRef);
 							}
 						}
 						if (featureWithDomains)
@@ -165,7 +167,7 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 				genomeRefToStat.put(genomeRef, new GenomeStat().withGenomeRef(genomeRef)
 						.withKbaseId(kBaseIdAndSciName[0]).withScientificName(kBaseIdAndSciName[1]) 
 						.withFeatures((long)features).withFeaturesWithDomains((long)featuresWithDomains)
-						.withDomains((long)domains));
+						.withDomains((long)domains).withDomainModels((long)domainModelsForGenome.size()));
 				if (genomeRefToStat.size() % 30 == 0)
 					clusterCache.flush();
 			}
@@ -182,8 +184,6 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 				String domainModelName = domainModelRefToNameMap.get(domainRef);
 				if (domainModelName == null)
 					throw new IllegalStateException("No domain model name for reference: " + domainRef);
-				//String domainClusterName = domainModelName + ".cluster";
-				//System.out.println("Saving cluster and msa for domain model: " + domainModelName + "(" + domainRef + ")");
 				Set<String> genomeRefAndFeatureIdAndStart = new HashSet<String>();
 				Map<String, Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>> genomeRefAndFeatureIdToElement = 
 						new HashMap<String, Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>>();
@@ -202,64 +202,56 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 					stat = new DomainClusterStat().withDomainModelRef(domainRef).withName(domainModelName)
 					.withGenomes(0L).withFeatures(0L).withDomains(0L);
 				domainModelRefToStat.put(domainRef, stat);
-				BufferedReader br = new BufferedReader(new FileReader(clusterFile));
 				Set<String> genomeRefs = new HashSet<String>();
-				try {
-					while (true) {
-						String l = br.readLine();
-						if (l == null)
-							break;
-						String[] parts = l.split("\t");
-						if (parts.length != 11) {
-							if (l.lastIndexOf("[*]\t") <= 0)
-								throw new IllegalStateException("Wrong line format: \"" + l + "\"");
-							l = l.substring(l.lastIndexOf("[*]\t"));
-							parts = l.split("\t");
-						}
-						String genomeRef = parts[1];
-						String contigId = parts[2];
-						String featureId = parts[3]; 
-						long featureIndex = Long.parseLong(parts[4]);
-						Tuple5<Long, Long, Double, Double, Double> domainPlace = new Tuple5<Long, Long, Double, Double, Double>()
-								.withE1(Long.parseLong(parts[5])).withE2(Long.parseLong(parts[6])).withE3(Double.parseDouble(parts[7]))
-								.withE4(Double.parseDouble(parts[8])).withE5(Double.parseDouble(parts[9]));
-						String alignedSeq = parts[10];
-						String key = genomeRef + "_" + featureId + "_" + domainPlace.getE1();
-						if (genomeRefAndFeatureIdAndStart.contains(key))
-							continue;
-						msa.getAlignment().put(key, alignedSeq);
-						alnLen = alignedSeq.length();
-						List<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>> elements = 
-								cluster.getData().get(genomeRef);
-						if (elements == null) {
-							elements = new ArrayList<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>>();
-							cluster.getData().put(genomeRef, elements);
-						}
-						String key2 = genomeRef + "_" + featureId;
-						Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>> featureElement = 
-								genomeRefAndFeatureIdToElement.get(key2);
-						if (featureElement == null) {
-							featureElement = new Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>()
-									.withE1(contigId).withE2(featureId).withE3(featureIndex)
-									.withE4(new ArrayList<Tuple5<Long, Long, Double, Double, Double>>());
-							elements.add(featureElement);
-							genomeRefAndFeatureIdToElement.put(key2, featureElement);
-							stat.setFeatures(stat.getFeatures() + 1);
-							genomeRefs.add(genomeRef);
-						}
-						featureElement.getE4().add(domainPlace);
+				for (String l : clusterCache.getLines(clusterFile)) {
+					String[] parts = l.split("\t");
+					if (parts.length != 11) {
+						if (l.lastIndexOf("[*]\t") <= 0)
+							throw new IllegalStateException("Wrong line format: \"" + l + "\"");
+						l = l.substring(l.lastIndexOf("[*]\t"));
+						parts = l.split("\t");
 					}
-				} finally {
-					br.close();
+					String genomeRef = parts[1];
+					String contigId = parts[2];
+					String featureId = parts[3]; 
+					long featureIndex = Long.parseLong(parts[4]);
+					Tuple5<Long, Long, Double, Double, Double> domainPlace = new Tuple5<Long, Long, Double, Double, Double>()
+							.withE1(Long.parseLong(parts[5])).withE2(Long.parseLong(parts[6])).withE3(Double.parseDouble(parts[7]))
+							.withE4(Double.parseDouble(parts[8])).withE5(Double.parseDouble(parts[9]));
+					String alignedSeq = parts[10];
+					String key = genomeRef + "_" + featureId + "_" + domainPlace.getE1();
+					if (genomeRefAndFeatureIdAndStart.contains(key))
+						continue;
+					msa.getAlignment().put(key, alignedSeq);
+					alnLen = alignedSeq.length();
+					List<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>> elements = 
+							cluster.getData().get(genomeRef);
+					if (elements == null) {
+						elements = new ArrayList<Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>>();
+						cluster.getData().put(genomeRef, elements);
+					}
+					String key2 = genomeRef + "_" + featureId;
+					Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>> featureElement = 
+							genomeRefAndFeatureIdToElement.get(key2);
+					if (featureElement == null) {
+						featureElement = new Tuple4<String, String, Long, List<Tuple5<Long, Long, Double, Double, Double>>>()
+								.withE1(contigId).withE2(featureId).withE3(featureIndex)
+								.withE4(new ArrayList<Tuple5<Long, Long, Double, Double, Double>>());
+						elements.add(featureElement);
+						genomeRefAndFeatureIdToElement.put(key2, featureElement);
+						stat.setFeatures(stat.getFeatures() + 1);
+						genomeRefs.add(genomeRef);
+					}
+					featureElement.getE4().add(domainPlace);
 				}
 				stat.setGenomes(stat.getGenomes() + genomeRefs.size());
 				msa.setAlignmentLength((long)alnLen);
 				if (isDomainClusterDataStoredOutside) {
 					String domainClusterName = domainModelName;
 					if (domainClusterDataIdPrefix != null && !domainClusterDataIdPrefix.isEmpty())
-						domainClusterName = domainClusterDataIdPrefix + "." + domainClusterName;
+						domainClusterName = domainClusterDataIdPrefix + domainClusterName;
 					if (domainClusterDataIdSuffix != null && !domainClusterDataIdSuffix.isEmpty())
-						domainClusterName = domainClusterName + "." + domainClusterDataIdSuffix;
+						domainClusterName = domainClusterName + domainClusterDataIdSuffix;
 					///// MSA
 					String msaRef = saveObject(storage, token, outWsName, msaWsType, domainClusterName + ".msa", 
 							msa, "Object was constructed as part of domain clusters construction procedure",
