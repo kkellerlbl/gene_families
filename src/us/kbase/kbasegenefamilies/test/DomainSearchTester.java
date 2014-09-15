@@ -42,8 +42,9 @@ public class DomainSearchTester {
 		WorkspaceClient client = client(token);
 		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
 		File tempDir = new File(get(props, "temp.dir"));
-		runDomainSearch(client, st, token, tempDir);
+		//runDomainSearch(client, st, token, tempDir);
 		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
+		runDomainSearchRemotely(client, token);
 	}
 	
 	private static void runDomainSearch(WorkspaceClient client, ObjectStorage st, String token, File tempDir) throws Exception {

@@ -147,7 +147,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public String searchDomains(SearchDomainsParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN search_domains
-        getTaskQueue().addTask(params, authPart.toString());
+        returnVal = getTaskQueue().addTask(params, authPart.toString());
         //END search_domains
         return returnVal;
     }
@@ -163,7 +163,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public String constructDomainClusters(ConstructDomainClustersParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN construct_domain_clusters
-        getTaskQueue().addTask(params, authPart.toString());
+        returnVal = getTaskQueue().addTask(params, authPart.toString());
         //END construct_domain_clusters
         return returnVal;
     }
@@ -179,7 +179,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params, AuthToken authPart) throws Exception {
         String returnVal = null;
         //BEGIN search_domains_and_construct_clusters
-        getTaskQueue().addTask(params, authPart.toString());
+        returnVal = getTaskQueue().addTask(params, authPart.toString());
         //END search_domains_and_construct_clusters
         return returnVal;
     }
