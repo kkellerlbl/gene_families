@@ -15,14 +15,18 @@ import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthService;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
+import us.kbase.common.service.Tuple7;
 import us.kbase.common.service.UnauthorizedException;
 import us.kbase.kbasegenefamilies.DefaultTaskBuilder;
 import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
 import us.kbase.kbasegenefamilies.DomainClusterStat;
 import us.kbase.kbasegenefamilies.GenomeStat;
+import us.kbase.kbasegenefamilies.KBaseGeneFamiliesClient;
 import us.kbase.kbasegenefamilies.ObjectStorage;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams;
+import us.kbase.kbasetrees.Tree;
+import us.kbase.userandjobstate.UserAndJobStateClient;
 import us.kbase.workspace.ObjectIdentity;
 import us.kbase.workspace.WorkspaceClient;
 
@@ -38,8 +42,8 @@ public class DomainSearchTester {
 		WorkspaceClient client = client(token);
 		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
 		File tempDir = new File(get(props, "temp.dir"));
-		//runDomainSearch(client, st, token, tempDir);
-		printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
+		runDomainSearch(client, st, token, tempDir);
+		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
 	}
 	
 	private static void runDomainSearch(WorkspaceClient client, ObjectStorage st, String token, File tempDir) throws Exception {
@@ -49,28 +53,7 @@ public class DomainSearchTester {
 		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
 		builder.run(token, new SearchDomainsAndConstructClustersParams().withClustersForExtension(dcsrRef)
 				.withGenomes(Arrays.asList(genomeRef)).withOutWorkspace(wsName).withOutResultId(outId), "temp_job_id", wsName + "/" + outId);
-		DomainClusterSearchResult dcsr = getObject(client, wsName + "/" + outId, DomainClusterSearchResult.class);
-		String parentDcsrRef = dcsr.getParentRef();
-		DomainClusterSearchResult parentDcsr = getObject(client, parentDcsrRef, DomainClusterSearchResult.class);
-		PrintWriter pw = new PrintWriter(new File("dcsr_test.txt"));
-		pw.println("-= User genomes =-");
-		for (GenomeStat gs : dcsr.getGenomeStatistics().values()) {
-			pw.println("Genome " + gs.getGenomeRef() + ", " + gs.getKbaseId() + ", " + gs.getScientificName() + ": " +
-					"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
-		}
-		pw.println();
-		pw.println("-= Public genomes =-");
-		for (GenomeStat gs : parentDcsr.getGenomeStatistics().values()) {
-			pw.println("Genome " + gs.getGenomeRef() + ", " + gs.getKbaseId() + ", " + gs.getScientificName() + ": " +
-					"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
-		}
-		pw.println();
-		pw.println("-= Domains =-");
-		for (DomainClusterStat dcs : dcsr.getDomainClusterStatistics().values()) {
-			pw.println("Domain " + dcs.getDomainModelRef() + ", " + dcs.getName() + ": g=" + dcs.getGenomes() + ", " +
-					"f=" + dcs.getFeatures() + ", d=" + dcs.getDomains());
-		}
-		pw.close();
+		printClusters(client, wsName + "/" + outId, new File("dcsr_test.txt"));
 	}
 	
 	private static void printClusters(WorkspaceClient client, String dcsrRef, File out) throws Exception {
@@ -82,12 +65,52 @@ public class DomainSearchTester {
 					"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
 		}
 		pw.println();
+		if (dcsr.getParentRef() != null) {
+			DomainClusterSearchResult parentDcsr = getObject(client, dcsr.getParentRef(), DomainClusterSearchResult.class);
+			pw.println("-= Public genomes =-");
+			for (GenomeStat gs : parentDcsr.getGenomeStatistics().values()) {
+				pw.println("Genome " + gs.getGenomeRef() + ", " + gs.getKbaseId() + ", " + gs.getScientificName() + ": " +
+						"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
+			}
+			pw.println();
+		}
 		pw.println("-= Domains =-");
 		for (DomainClusterStat dcs : dcsr.getDomainClusterStatistics().values()) {
 			pw.println("Domain " + dcs.getDomainModelRef() + ", " + dcs.getName() + ": g=" + dcs.getGenomes() + ", " +
 					"f=" + dcs.getFeatures() + ", d=" + dcs.getDomains());
 		}
 		pw.close();
+	}
+	
+	private static void runDomainSearchRemotely(WorkspaceClient client, String token) throws Exception {
+		KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL("http://140.221.67.204:8123"), new AuthToken(token));
+		gf.setIsInsecureHttpConnectionAllowed(true);
+		String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
+		String outId = "TempDomains2";
+		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
+		String jobId = gf.searchDomainsAndConstructClusters(new SearchDomainsAndConstructClustersParams().withClustersForExtension(dcsrRef)
+				.withGenomes(Arrays.asList(genomeRef)).withOutWorkspace(wsName).withOutResultId(outId));
+		UserAndJobStateClient jscl = new UserAndJobStateClient(new URL("https://kbase.us/services/userandjobstate/"), new AuthToken(token));
+		jscl.setAllSSLCertificatesTrusted(true);
+		jscl.setIsInsecureHttpConnectionAllowed(true);
+		for (int iter = 0; ; iter++) {
+			Tuple7<String, String, String, Long, String, Long, Long> data = jscl.getJobStatus(jobId);
+			String status = data.getE3();
+    		Long complete = data.getE6();
+    		Long wasError = data.getE7();
+			System.out.println("Status (" + iter + "): " + status);
+			if (complete == 1L) {
+				if (wasError == 0L) {
+					String wsRef = jscl.getResults(jobId).getWorkspaceids().get(0);
+					printClusters(client, wsRef, new File("dcsr2_test.txt"));
+				} else {
+					System.out.println("Detailed error:");
+					System.out.println(jscl.getDetailedError(jobId));
+				}
+				break;
+			}
+			Thread.sleep(12000);
+		}
 	}
 	
 	private static <T> T getObject(WorkspaceClient client, String ref, Class<T> type) throws Exception {
