@@ -38,6 +38,11 @@ public class DomainSearchTester {
 		WorkspaceClient client = client(token);
 		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
 		File tempDir = new File(get(props, "temp.dir"));
+		//runDomainSearch(client, st, token, tempDir);
+		printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
+	}
+	
+	private static void runDomainSearch(WorkspaceClient client, ObjectStorage st, String token, File tempDir) throws Exception {
 		String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
 		String outId = "TempDomains";
 		SearchDomainsAndConstructClustersBuilder builder = new SearchDomainsAndConstructClustersBuilder(tempDir, st);
@@ -56,6 +61,23 @@ public class DomainSearchTester {
 		pw.println();
 		pw.println("-= Public genomes =-");
 		for (GenomeStat gs : parentDcsr.getGenomeStatistics().values()) {
+			pw.println("Genome " + gs.getGenomeRef() + ", " + gs.getKbaseId() + ", " + gs.getScientificName() + ": " +
+					"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
+		}
+		pw.println();
+		pw.println("-= Domains =-");
+		for (DomainClusterStat dcs : dcsr.getDomainClusterStatistics().values()) {
+			pw.println("Domain " + dcs.getDomainModelRef() + ", " + dcs.getName() + ": g=" + dcs.getGenomes() + ", " +
+					"f=" + dcs.getFeatures() + ", d=" + dcs.getDomains());
+		}
+		pw.close();
+	}
+	
+	private static void printClusters(WorkspaceClient client, String dcsrRef, File out) throws Exception {
+		DomainClusterSearchResult dcsr = getObject(client, dcsrRef, DomainClusterSearchResult.class);
+		PrintWriter pw = new PrintWriter(out);
+		pw.println("-= Genomes =-");
+		for (GenomeStat gs : dcsr.getGenomeStatistics().values()) {
 			pw.println("Genome " + gs.getGenomeRef() + ", " + gs.getKbaseId() + ", " + gs.getScientificName() + ": " +
 					"f=" + gs.getFeatures() + ", fwd=" + gs.getFeaturesWithDomains() + ", d=" + gs.getDomains() + ", dm=" + gs.getDomainModels());
 		}

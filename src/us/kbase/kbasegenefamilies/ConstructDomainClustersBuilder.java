@@ -243,6 +243,7 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 						genomeRefs.add(genomeRef);
 					}
 					featureElement.getE4().add(domainPlace);
+					stat.setDomains(stat.getDomains() + 1);
 				}
 				stat.setGenomes(stat.getGenomes() + genomeRefs.size());
 				msa.setAlignmentLength((long)alnLen);
