@@ -17,7 +17,7 @@ import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
 import us.kbase.common.service.Tuple7;
 import us.kbase.common.service.UnauthorizedException;
-import us.kbase.kbasegenefamilies.DefaultTaskBuilder;
+import us.kbase.kbasegenefamilies.ConstructDomainClustersParams;
 import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
 import us.kbase.kbasegenefamilies.DomainClusterStat;
 import us.kbase.kbasegenefamilies.GenomeStat;
@@ -25,7 +25,7 @@ import us.kbase.kbasegenefamilies.KBaseGeneFamiliesClient;
 import us.kbase.kbasegenefamilies.ObjectStorage;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams;
-import us.kbase.kbasetrees.Tree;
+import us.kbase.kbasegenefamilies.SearchDomainsParams;
 import us.kbase.userandjobstate.UserAndJobStateClient;
 import us.kbase.workspace.ObjectIdentity;
 import us.kbase.workspace.WorkspaceClient;
@@ -35,16 +35,21 @@ public class DomainSearchTester {
 	private static final String wsUrl = "http://dev04.berkeley.kbase.us:7058";
 	private static final String domainWsName = "KBasePublicGeneDomains";
 	private static final String defaultDCSRObjectName = "CogAndPfam.dcsr";
+	private static final String geneFamiliesUrl = "http://140.221.67.204:8123";
+	private static final String cogPfamDomainSetObjectName = "CogAndPfamDomains.set";
 	
 	public static void main(String[] args) throws Exception {
 		Properties props = props(new File("config.cfg"));
 		String token = token(props);
 		WorkspaceClient client = client(token);
-		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
-		File tempDir = new File(get(props, "temp.dir"));
+		//ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
+		//File tempDir = new File(get(props, "temp.dir"));
 		//runDomainSearch(client, st, token, tempDir);
 		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
 		runDomainSearchRemotely(client, token);
+		//String annotRef = runDomainSearchOnly(client, token);
+		//runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
+		//printClusters(client, wsName + "/TempDomains3", new File("dcsr3_test.txt"));
 	}
 	
 	private static void runDomainSearch(WorkspaceClient client, ObjectStorage st, String token, File tempDir) throws Exception {
@@ -84,7 +89,7 @@ public class DomainSearchTester {
 	}
 	
 	private static void runDomainSearchRemotely(WorkspaceClient client, String token) throws Exception {
-		KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL("http://140.221.67.204:8123"), new AuthToken(token));
+		KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
 		gf.setIsInsecureHttpConnectionAllowed(true);
 		String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
 		String outId = "TempDomains2";
@@ -104,6 +109,70 @@ public class DomainSearchTester {
 				if (wasError == 0L) {
 					String wsRef = jscl.getResults(jobId).getWorkspaceids().get(0);
 					printClusters(client, wsRef, new File("dcsr2_test.txt"));
+				} else {
+					System.out.println("Detailed error:");
+					System.out.println(jscl.getDetailedError(jobId));
+				}
+				break;
+			}
+			Thread.sleep(12000);
+		}
+	}
+	
+	private static String runDomainSearchOnly(WorkspaceClient client, String token) throws Exception {
+		KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
+		gf.setIsInsecureHttpConnectionAllowed(true);
+		String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
+		String outId = "TempAnnotation";
+		String dmsRef = domainWsName + "/" + cogPfamDomainSetObjectName;
+		String jobId = gf.searchDomains(new SearchDomainsParams().withDmsRef(dmsRef)
+				.withGenome(genomeRef).withOutWorkspace(wsName).withOutResultId(outId));
+		UserAndJobStateClient jscl = new UserAndJobStateClient(new URL("https://kbase.us/services/userandjobstate/"), new AuthToken(token));
+		jscl.setAllSSLCertificatesTrusted(true);
+		jscl.setIsInsecureHttpConnectionAllowed(true);
+		String ret = null;
+		for (int iter = 0; ; iter++) {
+			Tuple7<String, String, String, Long, String, Long, Long> data = jscl.getJobStatus(jobId);
+			String status = data.getE3();
+    		Long complete = data.getE6();
+    		Long wasError = data.getE7();
+			System.out.println("Status (" + iter + "): " + status);
+			if (complete == 1L) {
+				if (wasError == 0L) {
+					ret = jscl.getResults(jobId).getWorkspaceids().get(0);
+					System.out.println("Annotation reference: " + ret);
+				} else {
+					System.out.println("Detailed error:");
+					System.out.println(jscl.getDetailedError(jobId));
+				}
+				break;
+			}
+			Thread.sleep(12000);
+		}
+		return ret;
+	}
+	
+	private static void runDomainClustersExtension(WorkspaceClient client, String token, String annotRef) throws Exception {
+		KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
+		gf.setIsInsecureHttpConnectionAllowed(true);
+		//String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
+		String outId = "TempDomains3";
+		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
+		String jobId = gf.constructDomainClusters(new ConstructDomainClustersParams().withClustersForExtension(dcsrRef)
+				.withGenomeAnnotations(Arrays.asList(annotRef)).withOutWorkspace(wsName).withOutResultId(outId));
+		UserAndJobStateClient jscl = new UserAndJobStateClient(new URL("https://kbase.us/services/userandjobstate/"), new AuthToken(token));
+		jscl.setAllSSLCertificatesTrusted(true);
+		jscl.setIsInsecureHttpConnectionAllowed(true);
+		for (int iter = 0; ; iter++) {
+			Tuple7<String, String, String, Long, String, Long, Long> data = jscl.getJobStatus(jobId);
+			String status = data.getE3();
+    		Long complete = data.getE6();
+    		Long wasError = data.getE7();
+			System.out.println("Status (" + iter + "): " + status);
+			if (complete == 1L) {
+				if (wasError == 0L) {
+					String wsRef = jscl.getResults(jobId).getWorkspaceids().get(0);
+					printClusters(client, wsRef, new File("dcsr3_test.txt"));
 				} else {
 					System.out.println("Detailed error:");
 					System.out.println(jscl.getDetailedError(jobId));
