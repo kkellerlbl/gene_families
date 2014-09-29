@@ -360,6 +360,7 @@ public class ConstructDomainClustersBuilder extends DefaultTaskBuilder<Construct
 			if (this.annotAndAln == null)
 				this.annotAndAln = Collections.<Tuple2<DomainAnnotation, DomainAlignments>>emptyList();
 			this.storage = storage;
+			this.token = token;
 		}
 		
 		public int size() {

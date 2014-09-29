@@ -44,14 +44,14 @@ public class DomainSearchTester {
 		Properties props = props(new File("config.cfg"));
 		String token = token(props);
 		WorkspaceClient client = client(token);
-		File tempDir = new File(get(props, "temp.dir"));
+		//File tempDir = new File(get(props, "temp.dir"));
 		//runDomainSearchLocally(client, token, tempDir);
 		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
 		//runDomainSearchRemotely(client, token);
 		//String annotRef = runDomainSearchOnly(client, token);
-		//runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
+		runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
 		//printClusters(client, wsName + "/TempDomains3", new File("dcsr3_test.txt"));
-		runDomainClustersExtensionLocally(client, token, tempDir);
+		//runDomainClustersExtensionLocally(client, token, tempDir);
 	}
 	
 	private static void runDomainSearchLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
