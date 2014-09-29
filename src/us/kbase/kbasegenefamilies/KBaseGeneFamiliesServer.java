@@ -8,7 +8,9 @@ import us.kbase.common.service.JsonServerServlet;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.ini4j.Ini;
@@ -88,8 +90,11 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
 				@Override
 				public void completeJob(String job, String token, String status,
 						String error, String wsUrl, String outRef) throws Exception {
+					List<String> refs = new ArrayList<String>();
+					if (outRef != null)
+						refs.add(outRef);
     				createJobClient(finalUjsUrl, token).completeJob(job, token, status, error, 
-    						new Results().withWorkspaceurl(finalWsUrl).withWorkspaceids(Arrays.asList(outRef)));
+    						new Results().withWorkspaceurl(finalWsUrl).withWorkspaceids(refs));
 				}
 			};
 			taskConfig = new TaskQueueConfig(threadCount, queueDbDir, jobStatuses, wsUrl, allConfigProps);

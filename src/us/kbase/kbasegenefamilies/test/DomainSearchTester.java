@@ -17,7 +17,9 @@ import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
 import us.kbase.common.service.Tuple7;
 import us.kbase.common.service.UnauthorizedException;
+import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder;
 import us.kbase.kbasegenefamilies.ConstructDomainClustersParams;
+import us.kbase.kbasegenefamilies.DefaultTaskBuilder;
 import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
 import us.kbase.kbasegenefamilies.DomainClusterStat;
 import us.kbase.kbasegenefamilies.GenomeStat;
@@ -42,24 +44,37 @@ public class DomainSearchTester {
 		Properties props = props(new File("config.cfg"));
 		String token = token(props);
 		WorkspaceClient client = client(token);
-		//ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
-		//File tempDir = new File(get(props, "temp.dir"));
-		//runDomainSearch(client, st, token, tempDir);
+		File tempDir = new File(get(props, "temp.dir"));
+		//runDomainSearchLocally(client, token, tempDir);
 		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
-		runDomainSearchRemotely(client, token);
+		//runDomainSearchRemotely(client, token);
 		//String annotRef = runDomainSearchOnly(client, token);
 		//runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
 		//printClusters(client, wsName + "/TempDomains3", new File("dcsr3_test.txt"));
+		runDomainClustersExtensionLocally(client, token, tempDir);
 	}
 	
-	private static void runDomainSearch(WorkspaceClient client, ObjectStorage st, String token, File tempDir) throws Exception {
+	private static void runDomainSearchLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
 		String genomeRef = wsName + "/Burkholderia_YI23_uid81081.genome";
 		String outId = "TempDomains";
+		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
 		SearchDomainsAndConstructClustersBuilder builder = new SearchDomainsAndConstructClustersBuilder(tempDir, st);
 		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
 		builder.run(token, new SearchDomainsAndConstructClustersParams().withClustersForExtension(dcsrRef)
 				.withGenomes(Arrays.asList(genomeRef)).withOutWorkspace(wsName).withOutResultId(outId), "temp_job_id", wsName + "/" + outId);
 		printClusters(client, wsName + "/" + outId, new File("dcsr_test.txt"));
+	}
+
+	private static void runDomainClustersExtensionLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
+		String annotRef = wsName + "/TempAnnotation";
+		String outId = "TempDomains3";
+		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
+		ObjectStorage st = DefaultTaskBuilder.createDefaultObjectStorage(client);
+		ConstructDomainClustersBuilder builder = new ConstructDomainClustersBuilder(tempDir, st);
+		builder.run(token, new ConstructDomainClustersParams().withClustersForExtension(dcsrRef)
+				.withGenomeAnnotations(Arrays.asList(annotRef)).withOutWorkspace(wsName).withOutResultId(outId),
+				"temp_job_id", wsName + "/" + outId);
+		printClusters(client, wsName + "/" + outId, new File("dcsr3_test.txt"));
 	}
 	
 	private static void printClusters(WorkspaceClient client, String dcsrRef, File out) throws Exception {
