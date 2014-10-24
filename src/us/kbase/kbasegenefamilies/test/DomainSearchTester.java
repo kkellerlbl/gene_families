@@ -8,14 +8,21 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
+import java.util.TreeMap;
 
 import us.kbase.auth.AuthException;
 import us.kbase.auth.AuthService;
 import us.kbase.auth.AuthToken;
 import us.kbase.auth.TokenFormatException;
+import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.Tuple7;
+import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
 import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder;
 import us.kbase.kbasegenefamilies.ConstructDomainClustersParams;
@@ -28,8 +35,15 @@ import us.kbase.kbasegenefamilies.ObjectStorage;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;
 import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams;
 import us.kbase.kbasegenefamilies.SearchDomainsParams;
+import us.kbase.kbasetrees.MSA;
 import us.kbase.userandjobstate.UserAndJobStateClient;
+import us.kbase.workspace.CopyObjectParams;
+import us.kbase.workspace.CreateWorkspaceParams;
+import us.kbase.workspace.ObjectData;
 import us.kbase.workspace.ObjectIdentity;
+import us.kbase.workspace.ObjectSaveData;
+import us.kbase.workspace.SaveObjectsParams;
+import us.kbase.workspace.SubObjectIdentity;
 import us.kbase.workspace.WorkspaceClient;
 
 public class DomainSearchTester {
@@ -49,9 +63,11 @@ public class DomainSearchTester {
 		//printClusters(client, domainWsName + "/" + defaultDCSRObjectName, new File("par_dcsr_test.txt"));
 		//runDomainSearchRemotely(client, token);
 		//String annotRef = runDomainSearchOnly(client, token);
-		runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
+		//runDomainClustersExtension(client, token, wsName + "/TempAnnotation");
 		//printClusters(client, wsName + "/TempDomains3", new File("dcsr3_test.txt"));
 		//runDomainClustersExtensionLocally(client, token, tempDir);
+		//findMSA(client);
+		testSpeed2(client);
 	}
 	
 	private static void runDomainSearchLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
@@ -198,6 +214,114 @@ public class DomainSearchTester {
 		}
 	}
 	
+	private static void findMSA(WorkspaceClient wc) throws Exception {
+		String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
+		DomainClusterSearchResult dcsr = getObject(wc, dcsrRef, DomainClusterSearchResult.class);
+		String domainName = "pfam00325";
+		String domainRef = null;
+		for (DomainClusterStat stat : dcsr.getDomainClusterStatistics().values()) {
+			if (stat.getName().contains(domainName)) {
+				domainRef = stat.getDomainModelRef();
+				System.out.println("Domain: " + domainName + ", ref=" + domainRef);
+				break;
+			}
+		}
+		String msaRef = dcsr.getMsaRefs().get(domainRef);
+		System.out.println("MSA: ref=" + msaRef);
+		//MSA msa = getObject(wc, msaRef, MSA.class);
+		//System.out.println(msa.getName() + ", " + msa.getAlignmentLength() + ", " + msa.getDescription());
+		//msaRef = domainWsName + "/pfam00325.msa";
+		ObjectData od = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(msaRef))).get(0);
+		MSA msa = od.getData().asClassInstance(MSA.class);
+		System.out.println("MSA: " + msa.getAlignmentLength() + ", " + od.getInfo());
+	}
+	
+	private static void testSpeed(WorkspaceClient wc) throws Exception {
+		String wsName = "subdata_extraction_test";
+		//wc.createWorkspace(new CreateWorkspaceParams().withWorkspace(wsName));
+		String targetType = "KBaseGeneFamilies.DomainAnnotationPlain";
+		String pathRoot = "feature_to_contig_and_index";
+		String[][] refAndIncluded = {
+				{"868/65933/1", "kb|g.25133.CDS.2769"}, 
+//				{"868/59833/1", "feature_to_contig_and_index/kb|g.24363.CDS.3268"},
+//				{"868/48465/1", "feature_to_contig_and_index/kb|g.761.peg.5658"},
+//				{"868/68100/1", "feature_to_contig_and_index/kb|g.28402.CDS.3500"},
+//				{"868/69005/1", "feature_to_contig_and_index/kb|g.25130.CDS.1017"},
+//				{"868/67361/1", "feature_to_contig_and_index/kb|g.26022.CDS.5827"},
+//				{"868/67267/1", "feature_to_contig_and_index/kb|g.26184.CDS.202"},
+//				{"868/66969/1", "feature_to_contig_and_index/kb|g.25119.CDS.5632"},
+//				{"868/53543/1", "feature_to_contig_and_index/kb|g.31717.CDS.4864"},
+//				{"868/60309/1", "feature_to_contig_and_index/kb|g.26326.CDS.7731"}
+		};
+		List<SubObjectIdentity> sois = new ArrayList<SubObjectIdentity>();
+		for (int i = 0; i < refAndIncluded.length; i++) {
+			String[] pair = refAndIncluded[i];
+			//String ref = pair[0];
+			//UObject ann = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getData();
+			String objName = "test" + i;
+			Map<String, Object> ftcai = new TreeMap<String, Object>();
+			ftcai.put(pair[1], new Tuple2<String, Long>().withE1("1").withE2(2L));
+			for (int j = 0; j < 100000; j++)
+				ftcai.put("key" + j, new Tuple2<String, Long>().withE1("" + j).withE2(0L + j));
+			Map<String, Object> obj = new TreeMap<String, Object>();
+			obj.put(pathRoot, ftcai);
+			obj.put("genome_ref", "genome_ref");
+			obj.put("data", new TreeMap<String, Object>());
+			obj.put("contig_to_size_and_feature_count", new TreeMap<String, Object>());
+			wc.saveObjects(new SaveObjectsParams().withWorkspace(wsName).withObjects(Arrays.asList(
+					new ObjectSaveData().withType(targetType).withName(objName).withData(new UObject(obj)))));
+			//wc.copyObject(new CopyObjectParams().withFrom(new ObjectIdentity().withRef(ref))
+			//		.withTo(new ObjectIdentity().withWorkspace(wsName).withName(objName)));
+			sois.add(new SubObjectIdentity().withRef(wsName + "/" + objName).withIncluded(
+					Arrays.asList(pathRoot + "/" + pair[1])));
+			System.out.println("Object " + objName + " was saved");
+		}
+		long time = System.currentTimeMillis();
+		List<ObjectData> ret = wc.getObjectSubset(sois);
+		time = System.currentTimeMillis() - time;
+		System.out.println("Time: " + time);
+		for (ObjectData od : ret)
+			System.out.println(od);
+	}
+
+	private static void testSpeed2(WorkspaceClient wc) throws Exception {
+		String wsName = "subdata_extraction_test";
+		//wc.createWorkspace(new CreateWorkspaceParams().withWorkspace(wsName));
+		String targetType = "KBaseGeneFamilies.DomainAnnotationPlain";
+		String pathRoot = "feature_to_contig_and_index";
+		Random rnd = new Random();
+		for (int count = 10000; count <= 150000; count += 10000) {
+			String objName = "test0";
+			Map<String, Object> ftcai = new TreeMap<String, Object>();
+			for (int j = 0; j < count; j++)
+				ftcai.put("key" + j, new Tuple2<String, Long>().withE1("" + j).withE2(0L + j));
+			Map<String, Object> obj = new TreeMap<String, Object>();
+			obj.put(pathRoot, ftcai);
+			obj.put("genome_ref", "genome_ref");
+			obj.put("data", new TreeMap<String, Object>());
+			obj.put("contig_to_size_and_feature_count", new TreeMap<String, Object>());
+			wc.saveObjects(new SaveObjectsParams().withWorkspace(wsName).withObjects(Arrays.asList(
+					new ObjectSaveData().withType(targetType).withName(objName).withData(new UObject(obj)))));
+			String data = UObject.getMapper().writeValueAsString(obj);
+			//System.out.println("Object " + objName + " was saved for count=" + count + ", size=" + data.length());
+			double avgTime = 0;
+			double avgLen = 0;
+			int iterations = 100;
+			for (int i = 0; i < iterations; i++) {
+				long time = System.currentTimeMillis();
+				String ret = "" + wc.getObjectSubset(Arrays.asList(new SubObjectIdentity().withRef(wsName + "/" + objName).withIncluded(
+						Arrays.asList(pathRoot + "/key" + rnd.nextInt(count)))));
+				time = System.currentTimeMillis() - time;
+				avgTime += time;
+				avgLen += ret.length();
+			}
+			avgTime /= iterations;
+			avgLen /= iterations;
+			System.out.println("Map-size: " + count + ", object-length: " + data.length() + ", " +
+					"ret-length=" + avgLen + ", time: " + avgTime + " ms");
+		}
+	}
+
 	private static <T> T getObject(WorkspaceClient client, String ref, Class<T> type) throws Exception {
 		return client.getObjects(Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getData().asClassInstance(type);
 	}

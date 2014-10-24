@@ -99,7 +99,7 @@ public class DomainSearchTask {
 						contig2prots.put(contigId, prots);
 					}
 					long start = loc.getE3().equals("-") ? (loc.getE2() - loc.getE4() + 1) : loc.getE2();
-					long stop = loc.getE3().equals("-") ? (loc.getE2() - loc.getE4() + 1) : loc.getE2();
+					long stop = loc.getE3().equals("-") ? loc.getE2() : (loc.getE2() + loc.getE4() - 1);
 					long dir = loc.getE3().equals("-") ? -1 : +1;
 					prots.add(new Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>()
 							.withE1(feat.getId()).withE2(start).withE3(stop).withE4(dir)
