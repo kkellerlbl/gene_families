@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  *         index of every feature in feature list in every contig
  * domain_alignments_ref alignments_ref - reference to alignments of protein sequences against 
  *         domain profiles
+ * @optional alignments_ref
  * </pre>
  * 
  */

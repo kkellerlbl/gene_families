@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import us.kbase.kbasetrees.MSA;
+import us.kbase.kbasetrees.Tree;
 
 
 /**
@@ -34,6 +35,8 @@ import us.kbase.kbasetrees.MSA;
  * mapping<domain_model_ref, ws_alignment_id> msa_refs - references to multiple alignment objects 
  *         where all domain sequences are collected (keys in these MSA objects are constructed 
  *         according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
+ * mapping<domain_model_ref, KBaseTrees.Tree> trees - trees built for MSAs stored in msas field
+ * mapping<domain_model_ref, ws_tree_id> tree_refs - trees built for MSAs stored in msa_refs field
  * @optional parent_ref
  * @optional used_dms_ref
  * @optional annotations
@@ -43,6 +46,8 @@ import us.kbase.kbasetrees.MSA;
  * @optional domain_cluster_refs
  * @optional msas
  * @optional msa_refs
+ * @optional trees
+ * @optional tree_refs
  * </pre>
  * 
  */
@@ -59,7 +64,9 @@ import us.kbase.kbasetrees.MSA;
     "domain_cluster_refs",
     "msas",
     "msa_refs",
-    "domain_cluster_statistics"
+    "domain_cluster_statistics",
+    "trees",
+    "tree_refs"
 })
 public class DomainClusterSearchResult {
 
@@ -85,6 +92,10 @@ public class DomainClusterSearchResult {
     private Map<String, String> msaRefs;
     @JsonProperty("domain_cluster_statistics")
     private Map<String, DomainClusterStat> domainClusterStatistics;
+    @JsonProperty("trees")
+    private Map<String, Tree> trees;
+    @JsonProperty("tree_refs")
+    private Map<String, String> treeRefs;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("parent_ref")
@@ -252,6 +263,36 @@ public class DomainClusterSearchResult {
         return this;
     }
 
+    @JsonProperty("trees")
+    public Map<String, Tree> getTrees() {
+        return trees;
+    }
+
+    @JsonProperty("trees")
+    public void setTrees(Map<String, Tree> trees) {
+        this.trees = trees;
+    }
+
+    public DomainClusterSearchResult withTrees(Map<String, Tree> trees) {
+        this.trees = trees;
+        return this;
+    }
+
+    @JsonProperty("tree_refs")
+    public Map<String, String> getTreeRefs() {
+        return treeRefs;
+    }
+
+    @JsonProperty("tree_refs")
+    public void setTreeRefs(Map<String, String> treeRefs) {
+        this.treeRefs = treeRefs;
+    }
+
+    public DomainClusterSearchResult withTreeRefs(Map<String, String> treeRefs) {
+        this.treeRefs = treeRefs;
+        return this;
+    }
+
     @JsonAnyGetter
     public Map<java.lang.String, Object> getAdditionalProperties() {
         return this.additionalProperties;
@@ -264,7 +305,7 @@ public class DomainClusterSearchResult {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((((((((((((((((("DomainClusterSearchResult"+" [parentRef=")+ parentRef)+", usedDmsRef=")+ usedDmsRef)+", annotations=")+ annotations)+", alignments=")+ alignments)+", annotationRefs=")+ annotationRefs)+", genomeStatistics=")+ genomeStatistics)+", domainClusters=")+ domainClusters)+", domainClusterRefs=")+ domainClusterRefs)+", msas=")+ msas)+", msaRefs=")+ msaRefs)+", domainClusterStatistics=")+ domainClusterStatistics)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((((((((((((((("DomainClusterSearchResult"+" [parentRef=")+ parentRef)+", usedDmsRef=")+ usedDmsRef)+", annotations=")+ annotations)+", alignments=")+ alignments)+", annotationRefs=")+ annotationRefs)+", genomeStatistics=")+ genomeStatistics)+", domainClusters=")+ domainClusters)+", domainClusterRefs=")+ domainClusterRefs)+", msas=")+ msas)+", msaRefs=")+ msaRefs)+", domainClusterStatistics=")+ domainClusterStatistics)+", trees=")+ trees)+", treeRefs=")+ treeRefs)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
