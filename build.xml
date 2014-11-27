@@ -100,9 +100,9 @@
     <unzip dest="${classes}">
         <fileset refid="serverlib"/>
     </unzip>
-    <jar destfile="${dist}/NerscClusterDomainSearcher.jar" basedir="${classes}">
+    <jar destfile="${dist}/NerscClusterGenomeExport.jar" basedir="${classes}">
       <manifest>
-        <attribute name="Main-Class" value="us.kbase.kbasegenefamilies.NerscClusterDomainSearcher"/>
+        <attribute name="Main-Class" value="us.kbase.kbasegenefamilies.prepare.GenomeExport"/>
       </manifest>
     </jar>
     <delete dir="${classes}"/>
