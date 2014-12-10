@@ -2,67 +2,82 @@
 
 module KBaseGeneFamilies {
 
-	/* 
-		@id ws KBaseGeneFamilies.DomainModelType
-	*/
-	typedef string domain_model_type_ref;
+	typedef string domain_library_id;
 
 	/*
-		string type_name - we now have all types from CDD database: 'CHL', 'COG', 'KOG', 
-			'LOAD', 'MTH', 'PHA', 'PLN', 'PRK', 'PTZ', 'TIGR', 'cd', 'pfam', 'smart'. 
-		string version - version of domain type release
-		string date - release date (for example now the last CDD revision date is 
-			2014-02-20)
-		string source_name - name of source (resource like CDD)
-		string source_url - ftp/http where data was downloaded from
-		string source_version - optional, use it in case it's different from version of 
-			domain type
-		string description - short description of this domain type/source
-		int is_full_length - if 1 then there could be found only 1 domain copy of this 
-			type in protein
-		int is_cdd - if 1 then cdd fields of domain model should be used for search
-		string cdd_rps_blast_version - now we support RPS-blast version 2.2.29
-		int is_hmm - if 1 then hmm fields of domain model should be used for search
-		@optional source_version
-		@optional cdd_rps_blast_version
+		enum: CDD, SMART, Pfam, etc
 	*/
-	typedef structure {
-		string type_name;
-		string version;
-		string date;
-		string source_name;
-		string source_url;
-		string source_version;
-		string description;
-		int is_full_length;
-		int is_cdd;
-		string cdd_rps_blast_version;	
-		int is_hmm;	
-	} DomainModelType;
-
-	typedef string domain_name;
-
-	/* 
-		@id ws KBaseGeneFamilies.DomainModel
-	*/
-	typedef string domain_model_ref;
+	typedef string domain_source;
 
 	/*
-		domain_name domain_name - domain model name
-		domain_model_type_ref domain_type_ref - type of domain. 
-		string description - short description like domain functional role
-		string cdd_scoremat_file - main file used in RPS-blast
-		string cdd_consensus_seq - consensus of domain multiple alignment
-		@optional cdd_scoremat_gzip_file
-		@optional cdd_consensus_seq
+		date in ISO 8601 format; e.g., 2014-11-26
+	*/
+	typedef string date;
+
+	/*
+		enum: hmmscan-3.1b1, rpsblast-2.2.30
+	*/
+	typedef string program_version;
+
+	/*
+		enum: PSSM, HMM-Family, HMM-Domain, HMM-Repeat, HMM-Motif
+	*/
+	typedef string model_type;
+
+	typedef string domain_accession;
+	
+	/*
+		accession - accession of domain model (e.g., PF00244.1, or COG0001)
+		cdd_id - (optional) in case of CDD it's inner id which is reported by rps-blast program
+		name - name of domain model
+		description - description of domain model
+		length - length of profile
+		model_type - domain model type
+		trusted_cutoff - (optional) trusted cutoff of domain model for HMM libraries
+		@optional cdd_id trusted_cutoff
 	*/
 	typedef structure {
-		domain_name domain_name;
-		domain_model_type_ref domain_type_ref;
+		domain_accession accession;
+		string cdd_id;
+		string name;
 		string description;
-		string cdd_scoremat_gzip_file; 
-		string cdd_consensus_seq;
+		int length;
+		model_type model_type;
+		float trusted_cutoff;
 	} DomainModel;
+
+	typedef structure {
+		string file_name;
+		string shock_id;
+	} Handle;
+
+	/* @id ws KBaseGeneFamilies.DomainLibrary */
+	typedef string ws_lib_id;
+
+	/*
+		id - id of library
+		source - source of library (e.g., Cog, Pfam, ...)
+		source_url - ftp/http url where library can be downloaded 
+		version - version of library release
+		release_date - release date of library
+		program - program for running domain search
+		domain_prefix - prefix of domain accession defining library
+		dbxref_prefix - url prefix for db-external referencing
+		library_files - library files stored in Shock storage
+		domains - domain information
+	*/
+	typedef structure {
+		domain_library_id id;
+		domain_source source;
+		string source_url;
+		string version;
+		date release_date;
+		program_version program;
+		string domain_prefix;
+		string dbxref_prefix;
+		list<Handle> library_files;
+		mapping<domain_accession accession, DomainModel> domains;
+	} DomainLibrary;
 
 	/* 
 		@id ws KBaseGeneFamilies.DomainModelSet
@@ -71,16 +86,12 @@ module KBaseGeneFamilies {
 
 	/*
 		string set_name - name of model set
-		list<dms_ref> parent_refs - optional references to inherited domains
-		list<domain_model_type_ref> types - types of models in data
-		list<domain_model_ref> data - mapping from domain name to reference to 
-			domain model object
 	*/
 	typedef structure {
 		string set_name;
-		list<dms_ref> parent_refs;
-		list<domain_model_type_ref> types;
-		list<domain_model_ref> domain_model_refs;
+		mapping<string domain_prefix, ws_lib_id> domain_libs;
+		mapping<string domain_prefix, string dbxref_prefix> domain_prefix_to_dbxref_url;
+		mapping<domain_accession domain_accession, string description> domain_accession_to_description;
 	} DomainModelSet;
 
 	/* 
@@ -105,8 +116,11 @@ module KBaseGeneFamilies {
 	/* @id ws KBaseTrees.MSASet */
 	typedef string msa_set_ref;
 
+	/* @id ws KBaseTrees.Tree */
+	typedef string ws_tree_id;
+
 	/*
-		domain_model_ref model - reference to domain model
+		domain_accession model - reference to domain model
 		domain_cluster_ref parent_ref - optional reference to parent cluster (containing data 
 			describing some common set of genomes)
 		mapping<genome_ref,list<domain_cluster_element>> data - list of entrances of this domain 
@@ -122,14 +136,14 @@ module KBaseGeneFamilies {
 		@optional msa_ref
 	*/
 	typedef structure {
-		domain_model_ref model;
+		domain_accession model;
 		domain_cluster_ref parent_ref;
 		mapping<genome_ref,list<domain_cluster_element>> data;
 		ws_alignment_id msa_ref;
 	} DomainCluster;
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
-		mapping<domain_model_ref,list<domain_place>>> annotation_element;
+		mapping<domain_accession,list<domain_place>>> annotation_element;
 
 	typedef string contig_id;
 
@@ -143,7 +157,7 @@ module KBaseGeneFamilies {
 		mapping<contig_id, list<annotation_element>> data - 
 			list of entrances of different domains into proteins of annotated genome
 			(annotation_element -> typedef tuple<string feature_id,int feature_start,int feature_stop,
-				int feature_dir,mapping<domain_model_ref,list<domain_place>>>;
+				int feature_dir,mapping<domain_accession,list<domain_place>>>;
 			domain_place -> tuple<int start_in_feature,int stop_in_feature,float evalue,
 				float bitscore,float domain_coverage>).
 		mapping<contig_id, tuple<int size,int features>> contig_to_size_and_feature_count - 
@@ -167,12 +181,12 @@ module KBaseGeneFamilies {
 		alignments - alignments of domain profile against region in feature sequence stored as 
 			mapping from domain model reference to inner mapping from feature id to inner-inner 
 			mapping from start position of alignment in feature sequence to aligned sequence of 
-			domain occurrence (mapping<domain_model_ref, mapping<string feature_id,
+			domain occurrence (mapping<domain_accession, mapping<string feature_id,
 				mapping<string start_in_feature, string alignment_with_profile>>>).
 	*/
 	typedef structure {
 		genome_ref genome_ref;
-		mapping<domain_model_ref,mapping<string feature_id,
+		mapping<domain_accession,mapping<string feature_id,
 			mapping<string start_in_feature,string alignment_with_profile>>> alignments; 
 	} DomainAlignments;
 
@@ -203,7 +217,7 @@ module KBaseGeneFamilies {
 		Aggregated data for every domain cluster.
 	*/
 	typedef structure {
-		domain_model_ref domain_model_ref;
+		domain_accession domain_accession;
 		string name;
 		int genomes;
 		int features;
@@ -219,17 +233,19 @@ module KBaseGeneFamilies {
 			that user defined as input data for domain search
 		mapping<genome_ref, domain_annotation_ref> annotation_refs - domain annotation references 
 			in case we don't want to store annotations and alignments inside result object
-		mapping<domain_model_ref, DomainCluster> domain_clusters - clusters constructed based on 
+		mapping<domain_accession, DomainCluster> domain_clusters - clusters constructed based on 
 			query_genomes plus genomes from parent object
-		mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs - references to clusters 
+		mapping<domain_accession, domain_cluster_ref> domain_cluster_refs - references to clusters 
 			in case we don't want to store these clusters inside search result object
-		mapping<domain_model_ref, KBaseTrees.MSA> msas - multiple alignment objects where all domain sequences 
+		mapping<domain_accession, KBaseTrees.MSA> msas - multiple alignment objects where all domain sequences 
 			are collected (keys in these MSA objects are constructed according to such pattern: 
 			<genome_ref>_<feature_id>_<start_in_feature>), in case this field is not set or has
 			empty mapping msa_refs field should be used
-		mapping<domain_model_ref, ws_alignment_id> msa_refs - references to multiple alignment objects 
+		mapping<domain_accession, ws_alignment_id> msa_refs - references to multiple alignment objects 
 			where all domain sequences are collected (keys in these MSA objects are constructed 
 			according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
+		mapping<domain_accession, KBaseTrees.Tree> trees - trees built for MSAs stored in msas field
+		mapping<domain_accession, ws_tree_id> tree_refs - trees built for MSAs stored in msa_refs field
 		@optional parent_ref
 		@optional used_dms_ref
 		@optional annotations
@@ -239,6 +255,8 @@ module KBaseGeneFamilies {
 		@optional domain_cluster_refs
 		@optional msas
 		@optional msa_refs
+		@optional trees
+		@optional tree_refs
 	*/
 	typedef structure {
 		dcsr_ref parent_ref;
@@ -247,11 +265,13 @@ module KBaseGeneFamilies {
 		mapping<genome_ref, DomainAlignments> alignments;
 		mapping<genome_ref, domain_annotation_ref> annotation_refs;
 		mapping<genome_ref, GenomeStat> genome_statistics;
-		mapping<domain_model_ref, DomainCluster> domain_clusters;
-		mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs;
-		mapping<domain_model_ref, KBaseTrees.MSA> msas;
-		mapping<domain_model_ref, ws_alignment_id> msa_refs;
-		mapping<domain_model_ref, DomainClusterStat> domain_cluster_statistics;
+		mapping<domain_accession, DomainCluster> domain_clusters;
+		mapping<domain_accession, domain_cluster_ref> domain_cluster_refs;
+		mapping<domain_accession, KBaseTrees.MSA> msas;
+		mapping<domain_accession, ws_alignment_id> msa_refs;
+		mapping<domain_accession, DomainClusterStat> domain_cluster_statistics;
+		mapping<domain_accession, KBaseTrees.Tree> trees;
+		mapping<domain_accession, ws_tree_id> tree_refs;
 	} DomainClusterSearchResult;
 
 	/*
