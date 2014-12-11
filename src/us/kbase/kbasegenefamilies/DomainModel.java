@@ -14,66 +14,88 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * <p>Original spec-file type: DomainModel</p>
  * <pre>
- * domain_name domain_name - domain model name
- * domain_model_type_ref domain_type_ref - type of domain. 
- * string description - short description like domain functional role
- * string cdd_scoremat_file - main file used in RPS-blast
- * string cdd_consensus_seq - consensus of domain multiple alignment
- * @optional cdd_scoremat_gzip_file
- * @optional cdd_consensus_seq
+ * accession - accession of domain model (e.g., PF00244.1, or COG0001)
+ * cdd_id - (optional) in case of CDD it's inner id which is reported by rps-blast program
+ * name - name of domain model
+ * description - description of domain model
+ * length - length of profile
+ * model_type - domain model type
+ * trusted_cutoff - (optional) trusted cutoff of domain model for HMM libraries
+ * @optional cdd_id trusted_cutoff
  * </pre>
  * 
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "domain_name",
-    "domain_type_ref",
+    "accession",
+    "cdd_id",
+    "name",
     "description",
-    "cdd_scoremat_gzip_file",
-    "cdd_consensus_seq"
+    "length",
+    "model_type",
+    "trusted_cutoff"
 })
 public class DomainModel {
 
-    @JsonProperty("domain_name")
-    private String domainName;
-    @JsonProperty("domain_type_ref")
-    private String domainTypeRef;
+    @JsonProperty("accession")
+    private String accession;
+    @JsonProperty("cdd_id")
+    private String cddId;
+    @JsonProperty("name")
+    private String name;
     @JsonProperty("description")
     private String description;
-    @JsonProperty("cdd_scoremat_gzip_file")
-    private String cddScorematGzipFile;
-    @JsonProperty("cdd_consensus_seq")
-    private String cddConsensusSeq;
+    @JsonProperty("length")
+    private Long length;
+    @JsonProperty("model_type")
+    private String modelType;
+    @JsonProperty("trusted_cutoff")
+    private Double trustedCutoff;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("domain_name")
-    public String getDomainName() {
-        return domainName;
+    @JsonProperty("accession")
+    public String getAccession() {
+        return accession;
     }
 
-    @JsonProperty("domain_name")
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
+    @JsonProperty("accession")
+    public void setAccession(String accession) {
+        this.accession = accession;
     }
 
-    public DomainModel withDomainName(String domainName) {
-        this.domainName = domainName;
+    public DomainModel withAccession(String accession) {
+        this.accession = accession;
         return this;
     }
 
-    @JsonProperty("domain_type_ref")
-    public String getDomainTypeRef() {
-        return domainTypeRef;
+    @JsonProperty("cdd_id")
+    public String getCddId() {
+        return cddId;
     }
 
-    @JsonProperty("domain_type_ref")
-    public void setDomainTypeRef(String domainTypeRef) {
-        this.domainTypeRef = domainTypeRef;
+    @JsonProperty("cdd_id")
+    public void setCddId(String cddId) {
+        this.cddId = cddId;
     }
 
-    public DomainModel withDomainTypeRef(String domainTypeRef) {
-        this.domainTypeRef = domainTypeRef;
+    public DomainModel withCddId(String cddId) {
+        this.cddId = cddId;
+        return this;
+    }
+
+    @JsonProperty("name")
+    public String getName() {
+        return name;
+    }
+
+    @JsonProperty("name")
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public DomainModel withName(String name) {
+        this.name = name;
         return this;
     }
 
@@ -92,33 +114,48 @@ public class DomainModel {
         return this;
     }
 
-    @JsonProperty("cdd_scoremat_gzip_file")
-    public String getCddScorematGzipFile() {
-        return cddScorematGzipFile;
+    @JsonProperty("length")
+    public Long getLength() {
+        return length;
     }
 
-    @JsonProperty("cdd_scoremat_gzip_file")
-    public void setCddScorematGzipFile(String cddScorematGzipFile) {
-        this.cddScorematGzipFile = cddScorematGzipFile;
+    @JsonProperty("length")
+    public void setLength(Long length) {
+        this.length = length;
     }
 
-    public DomainModel withCddScorematGzipFile(String cddScorematGzipFile) {
-        this.cddScorematGzipFile = cddScorematGzipFile;
+    public DomainModel withLength(Long length) {
+        this.length = length;
         return this;
     }
 
-    @JsonProperty("cdd_consensus_seq")
-    public String getCddConsensusSeq() {
-        return cddConsensusSeq;
+    @JsonProperty("model_type")
+    public String getModelType() {
+        return modelType;
     }
 
-    @JsonProperty("cdd_consensus_seq")
-    public void setCddConsensusSeq(String cddConsensusSeq) {
-        this.cddConsensusSeq = cddConsensusSeq;
+    @JsonProperty("model_type")
+    public void setModelType(String modelType) {
+        this.modelType = modelType;
     }
 
-    public DomainModel withCddConsensusSeq(String cddConsensusSeq) {
-        this.cddConsensusSeq = cddConsensusSeq;
+    public DomainModel withModelType(String modelType) {
+        this.modelType = modelType;
+        return this;
+    }
+
+    @JsonProperty("trusted_cutoff")
+    public Double getTrustedCutoff() {
+        return trustedCutoff;
+    }
+
+    @JsonProperty("trusted_cutoff")
+    public void setTrustedCutoff(Double trustedCutoff) {
+        this.trustedCutoff = trustedCutoff;
+    }
+
+    public DomainModel withTrustedCutoff(Double trustedCutoff) {
+        this.trustedCutoff = trustedCutoff;
         return this;
     }
 
@@ -134,7 +171,7 @@ public class DomainModel {
 
     @Override
     public String toString() {
-        return ((((((((((((("DomainModel"+" [domainName=")+ domainName)+", domainTypeRef=")+ domainTypeRef)+", description=")+ description)+", cddScorematGzipFile=")+ cddScorematGzipFile)+", cddConsensusSeq=")+ cddConsensusSeq)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((((((("DomainModel"+" [accession=")+ accession)+", cddId=")+ cddId)+", name=")+ name)+", description=")+ description)+", length=")+ length)+", modelType=")+ modelType)+", trustedCutoff=")+ trustedCutoff)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

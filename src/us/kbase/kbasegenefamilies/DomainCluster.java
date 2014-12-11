@@ -17,7 +17,7 @@ import us.kbase.common.service.Tuple5;
 /**
  * <p>Original spec-file type: DomainCluster</p>
  * <pre>
- * domain_model_ref model - reference to domain model
+ * domain_accession model - reference to domain model
  * domain_cluster_ref parent_ref - optional reference to parent cluster (containing data 
  *         describing some common set of genomes)
  * mapping<genome_ref,list<domain_cluster_element>> data - list of entrances of this domain 

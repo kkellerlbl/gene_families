@@ -2,7 +2,6 @@
 package us.kbase.kbasegenefamilies;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -16,10 +15,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * <p>Original spec-file type: DomainModelSet</p>
  * <pre>
  * string set_name - name of model set
- * list<dms_ref> parent_refs - optional references to inherited domains
- * list<domain_model_type_ref> types - types of models in data
- * list<domain_model_ref> data - mapping from domain name to reference to 
- *         domain model object
  * </pre>
  * 
  */
@@ -27,20 +22,20 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
     "set_name",
-    "parent_refs",
-    "types",
-    "domain_model_refs"
+    "domain_libs",
+    "domain_prefix_to_dbxref_url",
+    "domain_accession_to_description"
 })
 public class DomainModelSet {
 
     @JsonProperty("set_name")
     private java.lang.String setName;
-    @JsonProperty("parent_refs")
-    private List<String> parentRefs;
-    @JsonProperty("types")
-    private List<String> types;
-    @JsonProperty("domain_model_refs")
-    private List<String> domainModelRefs;
+    @JsonProperty("domain_libs")
+    private Map<String, String> domainLibs;
+    @JsonProperty("domain_prefix_to_dbxref_url")
+    private Map<String, String> domainPrefixToDbxrefUrl;
+    @JsonProperty("domain_accession_to_description")
+    private Map<String, String> domainAccessionToDescription;
     private Map<java.lang.String, Object> additionalProperties = new HashMap<java.lang.String, Object>();
 
     @JsonProperty("set_name")
@@ -58,48 +53,48 @@ public class DomainModelSet {
         return this;
     }
 
-    @JsonProperty("parent_refs")
-    public List<String> getParentRefs() {
-        return parentRefs;
+    @JsonProperty("domain_libs")
+    public Map<String, String> getDomainLibs() {
+        return domainLibs;
     }
 
-    @JsonProperty("parent_refs")
-    public void setParentRefs(List<String> parentRefs) {
-        this.parentRefs = parentRefs;
+    @JsonProperty("domain_libs")
+    public void setDomainLibs(Map<String, String> domainLibs) {
+        this.domainLibs = domainLibs;
     }
 
-    public DomainModelSet withParentRefs(List<String> parentRefs) {
-        this.parentRefs = parentRefs;
+    public DomainModelSet withDomainLibs(Map<String, String> domainLibs) {
+        this.domainLibs = domainLibs;
         return this;
     }
 
-    @JsonProperty("types")
-    public List<String> getTypes() {
-        return types;
+    @JsonProperty("domain_prefix_to_dbxref_url")
+    public Map<String, String> getDomainPrefixToDbxrefUrl() {
+        return domainPrefixToDbxrefUrl;
     }
 
-    @JsonProperty("types")
-    public void setTypes(List<String> types) {
-        this.types = types;
+    @JsonProperty("domain_prefix_to_dbxref_url")
+    public void setDomainPrefixToDbxrefUrl(Map<String, String> domainPrefixToDbxrefUrl) {
+        this.domainPrefixToDbxrefUrl = domainPrefixToDbxrefUrl;
     }
 
-    public DomainModelSet withTypes(List<String> types) {
-        this.types = types;
+    public DomainModelSet withDomainPrefixToDbxrefUrl(Map<String, String> domainPrefixToDbxrefUrl) {
+        this.domainPrefixToDbxrefUrl = domainPrefixToDbxrefUrl;
         return this;
     }
 
-    @JsonProperty("domain_model_refs")
-    public List<String> getDomainModelRefs() {
-        return domainModelRefs;
+    @JsonProperty("domain_accession_to_description")
+    public Map<String, String> getDomainAccessionToDescription() {
+        return domainAccessionToDescription;
     }
 
-    @JsonProperty("domain_model_refs")
-    public void setDomainModelRefs(List<String> domainModelRefs) {
-        this.domainModelRefs = domainModelRefs;
+    @JsonProperty("domain_accession_to_description")
+    public void setDomainAccessionToDescription(Map<String, String> domainAccessionToDescription) {
+        this.domainAccessionToDescription = domainAccessionToDescription;
     }
 
-    public DomainModelSet withDomainModelRefs(List<String> domainModelRefs) {
-        this.domainModelRefs = domainModelRefs;
+    public DomainModelSet withDomainAccessionToDescription(Map<String, String> domainAccessionToDescription) {
+        this.domainAccessionToDescription = domainAccessionToDescription;
         return this;
     }
 
@@ -115,7 +110,7 @@ public class DomainModelSet {
 
     @Override
     public java.lang.String toString() {
-        return ((((((((((("DomainModelSet"+" [setName=")+ setName)+", parentRefs=")+ parentRefs)+", types=")+ types)+", domainModelRefs=")+ domainModelRefs)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((("DomainModelSet"+" [setName=")+ setName)+", domainLibs=")+ domainLibs)+", domainPrefixToDbxrefUrl=")+ domainPrefixToDbxrefUrl)+", domainAccessionToDescription=")+ domainAccessionToDescription)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }

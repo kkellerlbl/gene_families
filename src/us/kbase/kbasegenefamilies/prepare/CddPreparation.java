@@ -39,8 +39,9 @@ import us.kbase.workspace.WorkspaceIdentity;
 
 public class CddPreparation {
 	
-	private static final String defaultConfigFile = "config.cfg";	// "config_prod.cfg";
-	private static final String wsUrl = "http://dev04.berkeley.kbase.us:7058";  // "https://kbase.us/services/ws/";
+	private static final String defaultConfigFile = "config_dev.cfg";
+	//private static final String defaultConfigFile = "config_prod.cfg";  // "config.cfg"
+	private static final String wsUrl = "http://dev04.berkeley.kbase.us:7058";
 	//private static final String wsUrl = "https://kbase.us/services/ws/";
 	private static final String scorematFilesDir = "/Users/rsutormin/Work/2014-03-17_trees/smp";
 	private static final String domainWsName = "KBasePublicGeneDomains";
@@ -95,7 +96,7 @@ public class CddPreparation {
 				DomainModel model = ScorematParser.constructDomainModel(f, typeToDescrRef, typeStorage);
 				if (model == null)
 					continue;
-				String typeRef = model.getDomainTypeRef();
+				String typeRef = model.getAccession();
 				String typeName = refToType.get(typeRef).getTypeName();
 				List<DomainModel> buffer = typeNameToModelBuffer.get(typeName);
 				if (buffer == null) {
@@ -120,10 +121,10 @@ public class CddPreparation {
 			System.out.println("Type " + typeName + ": size=" + modelRefs.size());
 			String typeRef = typeToDescrRef.get(typeName).getE2();
 			DomainModelSet dms = new DomainModelSet()
-				.withSetName("Domains of type " + typeName)
-				.withParentRefs(Collections.<String>emptyList())
-				.withTypes(Arrays.asList(typeRef))
-				.withDomainModelRefs(modelRefs);
+				.withSetName("Domains of type " + typeName);
+				//.withParentRefs(Collections.<String>emptyList())
+				//.withTypes(Arrays.asList(typeRef))
+				//.withDomainModelRefs(modelRefs);
 			String domainSetRef = saveIntoWorkspaceAndGetRef(wc, domainWsName, domainSetWsType, 
 					typeName + ".set", dms);
 			if (!typeName.equals("KOG")) {
@@ -137,10 +138,10 @@ public class CddPreparation {
 	private static void storeBacterialDomainModelSet(List<String> parentRefs, 
 			List<String> typeRefs, WorkspaceClient wc) throws Exception {
 		DomainModelSet dms = new DomainModelSet()
-			.withSetName("Bacterial protein domains")
-			.withParentRefs(parentRefs)
-			.withTypes(typeRefs)
-			.withDomainModelRefs(Collections.<String>emptyList());
+			.withSetName("Bacterial protein domains");
+			//.withParentRefs(parentRefs)
+			//.withTypes(typeRefs)
+			//.withDomainModelRefs(Collections.<String>emptyList());
 		saveIntoWorkspaceAndGetRef(wc, domainWsName, domainSetWsType, 
 				bacterialDomainSetObjectName, dms);
 	}
@@ -159,7 +160,7 @@ public class CddPreparation {
 		List<ObjectSaveData> objects = new ArrayList<ObjectSaveData>();
 		for (DomainModel model : buffer)
 			objects.add(new ObjectSaveData().withType(domainModelWsType)
-					.withName(model.getDomainName() + ".domain").withData(new UObject(model)));
+					.withName(model.getAccession() + ".domain").withData(new UObject(model)));
 		List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>> infos = 
 				wc.saveObjects(new SaveObjectsParams().withWorkspace(domainWsName)
 				.withObjects(objects));
@@ -199,10 +200,13 @@ public class CddPreparation {
 		InputStream is = new FileInputStream(new File(defaultConfigFile));
 		props.load(is);
 		is.close();
-		return AuthService.login(props.getProperty("user"), props.getProperty("password")).getToken();
+		String user = props.getProperty("user");
+		System.out.println("User: " + user);
+		return AuthService.login(user, props.getProperty("password")).getToken();
 	}
 
 	private static WorkspaceClient createWsClient(AuthToken token) throws Exception {
+		System.out.println("Workspace url: " + wsUrl);
 		WorkspaceClient ret = new WorkspaceClient(new URL(wsUrl), token);
 		ret.setAuthAllowedForHttp(true);
 		return ret;
@@ -212,8 +216,7 @@ public class CddPreparation {
 		WorkspaceClient wc = createWsClient(getAuthToken());
 		String module = "KBaseGeneFamilies";
 		String[] types = {
-//				"DomainModelType", 
-//				"DomainModel", 
+				"DomainLibrary", 
 //				"DomainModelSet", 
 //				"DomainAnnotation", 
 //				"DomainAlignments", 

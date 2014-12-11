@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * mapping<contig_id, list<annotation_element>> data - 
  *         list of entrances of different domains into proteins of annotated genome
  *         (annotation_element -> typedef tuple<string feature_id,int feature_start,int feature_stop,
- *                 int feature_dir,mapping<domain_model_ref,list<domain_place>>>;
+ *                 int feature_dir,mapping<domain_accession,list<domain_place>>>;
  *         domain_place -> tuple<int start_in_feature,int stop_in_feature,float evalue,
  *                 float bitscore,float domain_coverage>).
  * mapping<contig_id, tuple<int size,int features>> contig_to_size_and_feature_count - 

@@ -24,19 +24,19 @@ import us.kbase.kbasetrees.Tree;
  *         that user defined as input data for domain search
  * mapping<genome_ref, domain_annotation_ref> annotation_refs - domain annotation references 
  *         in case we don't want to store annotations and alignments inside result object
- * mapping<domain_model_ref, DomainCluster> domain_clusters - clusters constructed based on 
+ * mapping<domain_accession, DomainCluster> domain_clusters - clusters constructed based on 
  *         query_genomes plus genomes from parent object
- * mapping<domain_model_ref, domain_cluster_ref> domain_cluster_refs - references to clusters 
+ * mapping<domain_accession, domain_cluster_ref> domain_cluster_refs - references to clusters 
  *         in case we don't want to store these clusters inside search result object
- * mapping<domain_model_ref, KBaseTrees.MSA> msas - multiple alignment objects where all domain sequences 
+ * mapping<domain_accession, KBaseTrees.MSA> msas - multiple alignment objects where all domain sequences 
  *         are collected (keys in these MSA objects are constructed according to such pattern: 
  *         <genome_ref>_<feature_id>_<start_in_feature>), in case this field is not set or has
  *         empty mapping msa_refs field should be used
- * mapping<domain_model_ref, ws_alignment_id> msa_refs - references to multiple alignment objects 
+ * mapping<domain_accession, ws_alignment_id> msa_refs - references to multiple alignment objects 
  *         where all domain sequences are collected (keys in these MSA objects are constructed 
  *         according to such pattern: <genome_ref>_<feature_id>_<start_in_feature>)
- * mapping<domain_model_ref, KBaseTrees.Tree> trees - trees built for MSAs stored in msas field
- * mapping<domain_model_ref, ws_tree_id> tree_refs - trees built for MSAs stored in msa_refs field
+ * mapping<domain_accession, KBaseTrees.Tree> trees - trees built for MSAs stored in msas field
+ * mapping<domain_accession, ws_tree_id> tree_refs - trees built for MSAs stored in msa_refs field
  * @optional parent_ref
  * @optional used_dms_ref
  * @optional annotations

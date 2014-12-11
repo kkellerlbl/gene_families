@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Generated("com.googlecode.jsonschema2pojo")
 @JsonPropertyOrder({
-    "domain_model_ref",
+    "domain_accession",
     "name",
     "genomes",
     "features",
@@ -29,8 +29,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 public class DomainClusterStat {
 
-    @JsonProperty("domain_model_ref")
-    private String domainModelRef;
+    @JsonProperty("domain_accession")
+    private String domainAccession;
     @JsonProperty("name")
     private String name;
     @JsonProperty("genomes")
@@ -41,18 +41,18 @@ public class DomainClusterStat {
     private Long domains;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    @JsonProperty("domain_model_ref")
-    public String getDomainModelRef() {
-        return domainModelRef;
+    @JsonProperty("domain_accession")
+    public String getDomainAccession() {
+        return domainAccession;
     }
 
-    @JsonProperty("domain_model_ref")
-    public void setDomainModelRef(String domainModelRef) {
-        this.domainModelRef = domainModelRef;
+    @JsonProperty("domain_accession")
+    public void setDomainAccession(String domainAccession) {
+        this.domainAccession = domainAccession;
     }
 
-    public DomainClusterStat withDomainModelRef(String domainModelRef) {
-        this.domainModelRef = domainModelRef;
+    public DomainClusterStat withDomainAccession(String domainAccession) {
+        this.domainAccession = domainAccession;
         return this;
     }
 
@@ -128,7 +128,7 @@ public class DomainClusterStat {
 
     @Override
     public String toString() {
-        return ((((((((((((("DomainClusterStat"+" [domainModelRef=")+ domainModelRef)+", name=")+ name)+", genomes=")+ genomes)+", features=")+ features)+", domains=")+ domains)+", additionalProperties=")+ additionalProperties)+"]");
+        return ((((((((((((("DomainClusterStat"+" [domainAccession=")+ domainAccession)+", name=")+ name)+", genomes=")+ genomes)+", features=")+ features)+", domains=")+ domains)+", additionalProperties=")+ additionalProperties)+"]");
     }
 
 }
