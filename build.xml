@@ -1,7 +1,7 @@
-<project name="Domain Service" default="compile" basedir=".">
+<project name="Gene Family Service" default="compile" basedir=".">
 
   <description>
-      Build war-file for the Tree Service
+      Build war-file for the Gene Families (Domain) Service
   </description>
 
   <!-- set global properties for this build -->
@@ -28,7 +28,8 @@
     <include name="jackson/jackson-annotations-2.2.3.jar"/>
     <include name="jackson/jackson-core-2.2.3.jar"/>
     <include name="jackson/jackson-databind-2.2.3.jar"/>
-    <include name="kbase/kbase-common-temp.jar"/>
+    <include name="kbase/shock/shock-client-0.0.7.jar" />
+    <include name="kbase/kbase-common-temp.jar" />
     <include name="junit/junit-4.9.jar"/>
     <include name="kbase/workspace/WorkspaceClient-0.2.0.jar"/>
     <include name="kbase/genomes/kbase-genomes-20140411.jar"/>
