@@ -42,7 +42,7 @@ download-thirdparty-bins:
 	./download_3rd_party_bins.sh
 
 prepare-thirdparty-dbs:	download-thirdparty-bins
-	./prepare-3rd_party_dbs
+	./prepare_3rd_party_dbs.sh
 
 prepare-deploy-target:	prepare-thirdparty-dbs
 

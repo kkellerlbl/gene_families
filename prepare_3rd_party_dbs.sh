@@ -5,9 +5,9 @@ cd ./tmp
 unamestr=`uname`
 
 if [[ "$unamestr" == 'Linux' ]]; then
-    OS = 'linux';
+    OS='linux'
 elif [[ "$unamestr" == 'Darwin' ]]; then
-    OS = 'macos';
+    OS='macos'
 fi
 
 ########### Pfam #############
@@ -17,15 +17,15 @@ if [ ! -f ../db/Pfam-A.hmm ]; then
     curl -o ../db/Pfam-A.hmm.gz 'ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam27.0/Pfam-A.hmm.gz'
     gzip -d ../db/Pfam-A.hmm.gz
     ../bin/hmmpress.$OS ../db/Pfam-A.hmm
-end
+fi
 
 ########### TIGRFAMS #############
 if [ ! -f ../db/TIGRFAMs_15.0_HMM.LIB ]; then
     echo "Downloading Pfam..."
-    curl -o ../db/TIGRFAMs_15.0_HMM.LIB.gz ftp://ftp.jcvi.org/pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz'
+    curl -o ../db/TIGRFAMs_15.0_HMM.LIB.gz 'ftp://ftp.jcvi.org/pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz'
     gzip -d ../db/TIGRFAMs_15.0_HMM.LIB.gz
     ../bin/hmmpress.$OS ../db/TIGRFAMs_15.0_HMM.LIB
-end
+fi
 
 ########### CDD #############
 if [ ! -f ../db/cdd.hmm ]; then
@@ -46,4 +46,4 @@ if [ ! -f ../db/cdd.hmm ]; then
     mv Cog.* ../../db
     cd ..
     rm -rf smp
-end
+fi
