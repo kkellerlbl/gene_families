@@ -5,7 +5,7 @@ cd ./tmp
 unamestr=`uname`
 if [[ "$unamestr" == 'Linux' ]]; then
 	echo "OS architecture: linux"
-	########### Blast #############
+	########### BLAST #############
 	if [ ! -f ../bin/rpsblast.linux ]; then
 		echo "Downloading blast..."
 		curl -o blast.tar.gz 'ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.2.30/ncbi-blast-2.2.30+-x64-linux.tar.gz'
@@ -16,6 +16,7 @@ if [[ "$unamestr" == 'Linux' ]]; then
 		rmdir ./ncbi-blast-2.2.30+
 		rm ./blast.tar.gz
 	fi
+	########### HMMER #############
 	if [ ! -f ../bin/hmmscan.linux ]; then
 		echo "Downloading hmmer..."
 		curl -o hmmer.tar.gz 'ftp://selab.janelia.org/pub/software/hmmer3/3.1b1/hmmer-3.1b1-linux-intel-x86_64.tar.gz'
@@ -28,7 +29,7 @@ if [[ "$unamestr" == 'Linux' ]]; then
 	fi
 elif [[ "$unamestr" == 'Darwin' ]]; then
 	echo "OS architecture: mac os x"
-	########### Blast #############
+	########### BLAST #############
 	if [ ! -f ../bin/rpsblast.macosx ]; then
 		echo "Downloading blast..."
 		curl -o blast.tar.gz 'ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.2.30/ncbi-blast-2.2.30+-universal-macosx.tar.gz'
@@ -39,6 +40,7 @@ elif [[ "$unamestr" == 'Darwin' ]]; then
 		rmdir ./ncbi-blast-2.2.30+
 		rm ./blast.tar.gz
 	fi
+	########### HMMER #############
 	if [ ! -f ../bin/hmmscan.macosx ]; then
 		echo "Downloading hmmer..."
 		curl -o hmmer.tar.gz 'ftp://selab.janelia.org/pub/software/hmmer3/3.1b1/hmmer-3.1b1-macosx-intel.tar.gz'
