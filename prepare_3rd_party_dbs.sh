@@ -34,6 +34,7 @@ if [ ! -f ../db/Cdd.rps ]; then
     curl -o cdd.tar.gz 'ftp://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/cdd.tar.gz'
     mkdir smp
     cd smp
+    # need to do this in multiple steps so we don't run out of disk space
     tar --wildcards -xf ../cdd.tar.gz 'COG*.smp'
     ls -1 COG*.smp > Cog
     ../../bin/makeprofiledb.$OS -in Cog -threshold 9.82 -scale 100.0 -dbtype rps -index true
@@ -53,4 +54,5 @@ if [ ! -f ../db/Cdd.rps ]; then
     rm *.smp
     cd ..
     rm -rf smp
+    rm cdd.tar.gz
 fi
