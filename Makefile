@@ -36,7 +36,7 @@ test-scripts:
 	@echo "No tests for scripts"
 
 test-java:  prepare-thirdparty-dbs
-        ant test -Djarsdir=$(TOP_DIR)/modules/jars/lib/jars
+	$(ANT) test
 
 compile: src
 	$(ANT) war

@@ -61,8 +61,14 @@
       <fileset dir="${src}">
       </fileset>
     </copy>
-    <jar destfile="${dist}/${jar.file}" basedir="${classes}"/>
-    <delete dir="${classes}"/>
+    <unzip dest="${classes}">
+        <fileset refid="serverlib"/>
+    </unzip>
+    <jar destfile="${dist}/${jar.file}" basedir="${classes}">
+      <manifest>
+        <attribute name="Main-Class" value="us.kbase.kbasegenefamilies.test.EColiTest"/>
+      </manifest>
+    </jar>
   </target>
 
   <target name="war" depends="compile" description="build the WAR file. Assumes compile has been run">
@@ -85,7 +91,6 @@
     </war>
     <delete dir="${war.lib}"/>
     <delete dir="${war}"/>
-    <delete dir="${classes}"/>
   </target>
 
   <target name="docs" description="prepare documentation">
