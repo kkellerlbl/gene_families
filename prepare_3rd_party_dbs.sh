@@ -28,22 +28,29 @@ if [ ! -f ../db/TIGRFAMs_15.0_HMM.LIB ]; then
 fi
 
 ########### CDD #############
-if [ ! -f ../db/cdd.hmm ]; then
+if [ ! -f ../db/Cdd.rps ]; then
     echo "Downloading CDD..."
     curl -o ../db/cddid.tbl.gz 'ftp://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/cddid.tbl.gz'
     curl -o cdd.tar.gz 'ftp://ftp.ncbi.nlm.nih.gov/pub/mmdb/cdd/cdd.tar.gz'
     mkdir smp
     cd smp
-    tar xf ../cdd.tar.gz
-    ls -1 cd*.smp > Cdd
-    ls -1 smart*.smp > Smart
-    ls -1 cog*.smp > Cog
-    ../../bin/makeprofiledb.$OS -i Cdd -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    ../../bin/makeprofiledb.$OS -i Cog -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    ../../bin/makeprofiledb.$OS -i Smart -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    mv Cdd.* ../../db
-    mv Smart.* ../../db
+    tar --wildcards -xf ../cdd.tar.gz 'COG*.smp'
+    ls -1 COG*.smp > Cog
+    ../../bin/makeprofiledb.$OS -in Cog -threshold 9.82 -scale 100.0 -dbtype rps -index true
     mv Cog.* ../../db
+    rm *.smp
+
+    tar --wildcards -xf ../cdd.tar.gz 'smart*.smp'
+    ls -1 smart*.smp > Smart
+    ../../bin/makeprofiledb.$OS -in Smart -threshold 9.82 -scale 100.0 -dbtype rps -index true
+    mv Smart.* ../../db
+    rm *.smp
+
+    tar --wildcards -xf ../cdd.tar.gz 'cd*.smp'
+    ls -1 cd*.smp > Cdd
+    ../../bin/makeprofiledb.$OS -in Cdd -threshold 9.82 -scale 100.0 -dbtype rps -index true
+    mv Cdd.* ../../db
+    rm *.smp
     cd ..
     rm -rf smp
 fi
