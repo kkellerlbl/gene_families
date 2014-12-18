@@ -1,6 +1,8 @@
 #!/bin/bash
 cd ./data
-mkdir tmp
+if [ ! -d tmp ]; then
+    mkdir tmp
+fi
 cd ./tmp
 unamestr=`uname`
 if [[ "$unamestr" == 'Linux' ]]; then
