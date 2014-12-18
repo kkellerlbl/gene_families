@@ -122,11 +122,14 @@ public class DomainSearchTask {
 			      .withE1(feat.getId()).withE2(start).withE3(stop).withE4(dir)
 			      .withE5(new TreeMap<String, List<Tuple5<Long, Long, Double, Double, Double>>>()));
 		}
-	    } finally {
+	    }
+	    finally {
 		try { fw.close(); } catch (Exception ignore) {}
 	    }
 	    if (protCount == 0)
 		throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
+
+	    // make file of all proteins
 	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
 	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
 		String contigId = genome.getContigIds().get(contigPos);

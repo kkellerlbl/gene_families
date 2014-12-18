@@ -21,7 +21,10 @@ deploy-all: deploy
 
 deploy: deploy-client deploy-service deploy-scripts deploy-docs
 
-test: test-client test-service test-scripts
+test: test-all
+
+# temporarily removed deps for test-all: test-service test-client test-scripts
+test-all: test-java
 
 test-client:
 	@echo "No tests for client"
@@ -31,6 +34,9 @@ test-service:
 
 test-scripts:
 	@echo "No tests for scripts"
+
+test-java:  prepare-thirdparty-dbs
+        ant test -Djarsdir=$(TOP_DIR)/modules/jars/lib/jars
 
 compile: src
 	$(ANT) war
