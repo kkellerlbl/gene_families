@@ -21,7 +21,10 @@ deploy-all: deploy
 
 deploy: deploy-client deploy-service deploy-scripts deploy-docs
 
-test: test-client test-service test-scripts
+test: test-all
+
+# temporarily removed deps for test-all: test-service test-client test-scripts
+test-all: test-java
 
 test-client:
 	@echo "No tests for client"
@@ -32,13 +35,27 @@ test-service:
 test-scripts:
 	@echo "No tests for scripts"
 
+test-java:  prepare-thirdparty-dbs
+	$(ANT) test
+
 compile: src
 	$(ANT) war
+
+src: KBaseGeneFamilies.spec
+	./generate_java_classes.sh
+
+download-thirdparty-bins:
+	./download_3rd_party_bins.sh
+
+prepare-thirdparty-dbs:	download-thirdparty-bins
+	./prepare_3rd_party_dbs.sh
+
+prepare-deploy-target:	prepare-thirdparty-dbs
 
 deploy-client:
 	@echo "No deployment for client"
 
-deploy-service:
+deploy-service:	prepare-deploy-target
 	@echo "Service folder: $(SERVICE_DIR)"
 	mkdir -p $(SERVICE_DIR)
 	cp -f ./dist/KBaseGeneFamilies.war $(SERVICE_DIR)
