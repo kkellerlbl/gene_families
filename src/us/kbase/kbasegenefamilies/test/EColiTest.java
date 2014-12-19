@@ -8,6 +8,8 @@ import org.junit.Test;
 import static junit.framework.Assert.*;
 
 import org.strbio.IO;
+import org.strbio.util.*;
+import us.kbase.common.service.*;
 import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
@@ -60,14 +62,7 @@ public class EColiTest {
     @Test public void getCOGs() throws Exception {
 	ObjectMapper mapper = new ObjectMapper();
 
-	BufferedReader infile = IO.openReader("/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz");
-	String buffer;
-	while ((buffer=infile.readLine()) != null) {
-	    StringTokenizer st = new StringTokenizer(buffer,"\t");
-	    
-	}
-
-	DomainModel m = new DomainModel();
+	DomainModelSet dms = new DomainModelSet().withSetName("COGs-only");
 
 	DomainLibrary dl = new DomainLibrary()
 	    .withId("COGs-CDD-3.12")
@@ -80,13 +75,73 @@ public class EColiTest {
 	    .withDbxrefPrefix("http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=")
 	    .withLibraryFiles(null);
 
-	DomainModelSet dms = new DomainModelSet().withSetName("COGs-only set");
+	Map<String,DomainModel> domains = new HashMap<String,DomainModel>();
+	Map<String,String> accessionToDescription = new HashMap<String,String>();
+
+	BufferedReader infile = IO.openReader("/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz");
+	String buffer;
+	while ((buffer=infile.readLine()) != null) {
+	    StringTokenizer st = new StringTokenizer(buffer,"\t");
+	    DomainModel m = new DomainModel();
+	    m.setCddId(st.nextToken());
+	    String accession = st.nextToken();
+	    m.setAccession(accession);
+	    m.setName(st.nextToken());
+	    String description = st.nextToken();
+	    m.setDescription(description);
+	    m.setLength(StringUtil.atol(st.nextToken()));
+	    m.setModelType("PSSM");
+	    if (accession.startsWith("COG")) {
+		domains.put(accession,m);
+		accessionToDescription.put(accession,description);
+	    }
+	}
+
+	dl.setDomains(domains);
+	dms.setDomainAccessionToDescription(accessionToDescription);	
+
+	Map<String,String> domainLibs = new HashMap<String,String>();
+	domainLibs.put("COG","COGs-CDD-3.12");
+	dms.setDomainLibs(domainLibs);
+	
+	Map<String,String> domainPrefix = new HashMap<String,String>();
+	domainPrefix.put("COG","http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
+	dms.setDomainPrefixToDbxrefUrl(domainPrefix);
+
+	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
+	mapper.writeValue(f,dl);
+	f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
+	mapper.writeValue(f,dms);
     }
 
-
     @Test public void searchEColi() throws Exception {
+	ObjectMapper mapper = new ObjectMapper();
+	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
+	DomainLibrary dl = mapper.readValue(f,DomainLibrary.class);
+
+	f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
+	DomainModelSet dms = mapper.readValue(f,DomainModelSet.class);
+	
 	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), null);
-	// Tuple2<DomainAnnotation, DomainAlignments> results = dst.runDomainSearch(genome,ecoliRef,"/kb/dev_container/modules/gene_families/data/db/Cog.rps",nulll);
+	Map<String,Tuple2<String,String>> modelNameToRefConsensus = new HashMap<String,Tuple2<String,String>>();
+
+	Map<String,DomainModel> domains = dl.getDomains();
+	for (String accession : domains.keySet()) {
+	    DomainModel m = domains.get(accession);
+	    Tuple2<String,String>domainModelRefConsensus =
+		new Tuple2<String,String>();
+	    domainModelRefConsensus.setE1(accession);
+	    domainModelRefConsensus.setE2(new String("TEST"));
+	    modelNameToRefConsensus.put(m.getCddId(), domainModelRefConsensus);
+	}
+
+	f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
+	Genome genome = mapper.readValue(f, Genome.class);
+
+	Tuple2<DomainAnnotation, DomainAlignments> results = dst.runDomainSearch(genome,ecoliRef,new File("/kb/dev_container/modules/gene_families/data/db/Cog"),modelNameToRefConsensus);
+
+	f = new File("/kb/dev_container/modules/gene_families/data/tmp/DomainAnnotation-g.0.json");
+	mapper.writeValue(f,results.getE1());
     }
     
 

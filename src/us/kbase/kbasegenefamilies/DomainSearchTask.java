@@ -165,12 +165,16 @@ public class DomainSearchTask {
 			if (domainModelRefConsensus == null)
 			    throw new IllegalStateException("Unexpected subject name in prs blast result: " + subject);
 			int featurePos = Integer.parseInt(query);
+			/*
 			String consensus = domainModelRefConsensus.getE2();
 			int alnLen = consensus.length();
 			String alignedSeq = AlignUtil.removeGapsFromSubject(alnLen, qseq, sstart - 1, sseq);
 			int coverage = 100 - AlignUtil.getGapPercent(alignedSeq);
 			if (coverage < MIN_COVERAGE)
 			    return;
+			*/
+			int coverage = 100;
+			String alignedSeq = "TEST";
 			Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
 			long featureIndex = contigIdFeatIndex.getE2();
 			Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(
@@ -529,11 +533,11 @@ public class DomainSearchTask {
 	if (errBaos != null) {
 	    String err_text = new String(errBaos.toByteArray());
 	    if (err_text.length() > 0)
-		err = new Exception("FastTree: " + err_text, err);
+		err = new Exception("RPS-BLAST: " + err_text, err);
 	}
 	if (procExitValue != 0) {
 	    if (err == null)
-		err = new IllegalStateException("FastTree exit code: " + procExitValue);
+		err = new IllegalStateException("RPS-BLAST exit code: " + procExitValue);
 	    throw err;
 	}
 	return tempOutputFile;
