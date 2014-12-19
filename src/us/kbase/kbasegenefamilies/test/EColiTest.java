@@ -132,7 +132,7 @@ public class EColiTest {
 		new Tuple2<String,String>();
 	    domainModelRefConsensus.setE1(accession);
 	    domainModelRefConsensus.setE2(new String("TEST"));
-	    modelNameToRefConsensus.put(m.getCddId(), domainModelRefConsensus);
+	    modelNameToRefConsensus.put(accession, domainModelRefConsensus);
 	}
 
 	f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
