@@ -59,7 +59,8 @@
     </javac>
     <!-- Copy resource files-->
     <copy todir="${classes}">
-      <fileset dir="${src}">
+      <fileset dir="${deploycfg}">
+	<include name="*.properties"/>
       </fileset>
     </copy>
     <unzip dest="${classes}">
