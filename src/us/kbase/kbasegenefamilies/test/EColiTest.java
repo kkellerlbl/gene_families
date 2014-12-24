@@ -9,20 +9,28 @@ import static junit.framework.Assert.*;
 
 import org.strbio.IO;
 import org.strbio.util.*;
+import com.fasterxml.jackson.databind.*;
+
+import us.kbase.auth.AuthService;
+import us.kbase.auth.AuthToken;
 import us.kbase.common.service.*;
 import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
-import com.fasterxml.jackson.databind.*;
 
 /**
    Tests for setting up sample db and annotating E. coli
 */
 public class EColiTest {
-    // private static final String wsUrl = "http://dev04.berkeley.kbase.us:7058";
     private static final String wsUrl = "https://kbase.us/services/ws/";
-    private static final String wsName = "KBasePublicGenomesV4";
-    private static final String ecoliRef = wsName+"/kb|g.0";
+    private static final String genomeWsName = "KBasePublicGenomesV4";
+    private static final String domainWsName = "KBasePublicGeneDomains";
+    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
+    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
+    private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation-1.0";
+    private static final String ecoliRef = genomeWsName+"/kb|g.0";
+    private static final String dlRef = domainWsName+"/COGs-CDD-3.12";
+    private static final String dmsRef = domainWsName+"/COGs-only";
 
     /**
        check that we can read E coli genome from WS or file;
@@ -46,9 +54,8 @@ public class EColiTest {
 
 	if (genome==null) {
 	    System.out.println("Reading genome from WS");
-	    WorkspaceClient client = new WorkspaceClient(new URL(wsUrl));
-	    client.setAuthAllowedForHttp(true);
-	    genome = client.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
+	    WorkspaceClient wc = createWsClient(null);
+	    genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
 	    mapper.writeValue(f,genome);
 	}
 	
@@ -59,7 +66,8 @@ public class EColiTest {
     /**
        Make a DomainModelSet for COGs
     */
-    @Test public void getCOGs() throws Exception {
+    // @Test
+    public void getCOGs() throws Exception {
 	ObjectMapper mapper = new ObjectMapper();
 
 	DomainModelSet dms = new DomainModelSet().withSetName("COGs-only");
@@ -98,29 +106,50 @@ public class EColiTest {
 	}
 
 	dl.setDomains(domains);
-	dms.setDomainAccessionToDescription(accessionToDescription);	
+	dms.setDomainAccessionToDescription(accessionToDescription);
+	Vector<Handle>libraryFiles = new Vector<Handle>();
+	dl.setLibraryFiles(libraryFiles);
 
-	Map<String,String> domainLibs = new HashMap<String,String>();
-	domainLibs.put("COG","COGs-CDD-3.12");
-	dms.setDomainLibs(domainLibs);
-	
 	Map<String,String> domainPrefix = new HashMap<String,String>();
 	domainPrefix.put("COG","http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
 	dms.setDomainPrefixToDbxrefUrl(domainPrefix);
 
-	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
-	mapper.writeValue(f,dl);
-	f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
-	mapper.writeValue(f,dms);
+	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
+	// mapper.writeValue(f,dl);
+	// f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
+	// mapper.writeValue(f,dms);
+
+	// save to ws instead of filesystem
+	WorkspaceClient wc = createWsClient(getDevToken());
+	String dlRef =
+	    getRefFromObjectInfo(wc.saveObjects(new SaveObjectsParams()
+			   .withWorkspace(domainWsName)
+			   .withObjects(Arrays.asList(new ObjectSaveData()
+						      .withType(domainLibraryType)
+						      .withName("COGs-CDD-3.12")
+						      .withData(new UObject(dl))))).get(0));
+	
+	Map<String,String> domainLibs = new HashMap<String,String>();
+	domainLibs.put("COG",dlRef);
+	dms.setDomainLibs(domainLibs);
+	
+	wc.saveObjects(new SaveObjectsParams()
+		       .withWorkspace(domainWsName)
+		       .withObjects(Arrays.asList(new ObjectSaveData()
+						  .withType(domainModelSetType)
+						  .withName("COGs-only")
+						  .withData(new UObject(dms)))));
     }
 
-    @Test public void searchEColi() throws Exception {
-	ObjectMapper mapper = new ObjectMapper();
-	File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
-	DomainLibrary dl = mapper.readValue(f,DomainLibrary.class);
+    @Test
+	public void searchEColi() throws Exception {
 
-	f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
-	DomainModelSet dms = mapper.readValue(f,DomainModelSet.class);
+	WorkspaceClient wc = createWsClient(getDevToken());
+	DomainLibrary dl =
+	    wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(dlRef))).get(0).getData().asClassInstance(DomainLibrary.class);
+	    
+	DomainModelSet dms = 
+	    wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(dmsRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 	
 	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), null);
 	Map<String,Tuple2<String,String>> modelNameToRefConsensus = new HashMap<String,Tuple2<String,String>>();
@@ -135,15 +164,62 @@ public class EColiTest {
 	    modelNameToRefConsensus.put(accession, domainModelRefConsensus);
 	}
 
-	f = new File("/kb/dev_container/modules/gene_families/data/tmp/g.0");
-	Genome genome = mapper.readValue(f, Genome.class);
+	Genome genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
 
 	Tuple2<DomainAnnotation, DomainAlignments> results = dst.runDomainSearch(genome,ecoliRef,new File("/kb/dev_container/modules/gene_families/data/db/Cog"),modelNameToRefConsensus);
 
-	f = new File("/kb/dev_container/modules/gene_families/data/tmp/DomainAnnotation-g.0.json");
-	mapper.writeValue(f,results.getE1());
+	// f = new File("/kb/dev_container/modules/gene_families/data/tmp/DomainAnnotation-g.0.json");
+	// mapper.writeValue(f,results.getE1());
+
+	wc.saveObjects(new SaveObjectsParams()
+		       .withWorkspace(domainWsName)
+		       .withObjects(Arrays.asList(new ObjectSaveData()
+						  .withType(domainAnnotationType)
+						  .withName("COGs-g.0")
+						  .withData(new UObject(results.getE1())))));
     }
-    
+
+    /**
+       creates a workspace client; if token is null, client can
+       only read public workspaces
+    */
+    public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
+	WorkspaceClient rv = null;
+	if (token==null)
+	    rv = new WorkspaceClient(new URL(wsUrl));
+	else
+	    rv = new WorkspaceClient(new URL(wsUrl),token);
+	rv.setAuthAllowedForHttp(true);
+	return rv;
+    }
+
+    /**
+       gets the auth token out of the properties file.  To create
+       it on your dev instance, do:
+       <pre>
+       kbase-login (your user name)
+       kbase-whoami -t
+       </pre>
+       Take the resulting text (starting with "un=") and put it in
+       the auth.properties file, as auth.token.  Replace the text
+       in the file that says "paste token here" with your token.
+    */
+    public static AuthToken getDevToken() throws Exception {
+	Properties prop = new Properties();
+	try {
+	    prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
+	}
+	catch (IOException e) {
+	}
+	catch (SecurityException e) {
+	}
+	String value = prop.getProperty("auth.token", null);
+	return new AuthToken(value);
+    }
+
+    private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
+	return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
+    }
 
     public static void main(String[] args) {
 	try {

@@ -40,19 +40,19 @@ if [ ! -f ../db/Cdd.rps ]; then
     tar --wildcards -xf ../cdd.tar.gz 'COG*.smp'
     ls -1 COG*.smp > Cog
     ../../bin/makeprofiledb.$OS -in Cog -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    mv Cog.* ../../db
+    mv Cog* ../../db
     rm *.smp
 
     tar --wildcards -xf ../cdd.tar.gz 'smart*.smp'
     ls -1 smart*.smp > Smart
     ../../bin/makeprofiledb.$OS -in Smart -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    mv Smart.* ../../db
+    mv Smart* ../../db
     rm *.smp
 
     tar --wildcards -xf ../cdd.tar.gz 'cd*.smp'
     ls -1 cd*.smp > Cdd
     ../../bin/makeprofiledb.$OS -in Cdd -threshold 9.82 -scale 100.0 -dbtype rps -index true
-    mv Cdd.* ../../db
+    mv Cdd* ../../db
     rm *.smp
     cd ..
     rm -rf smp
