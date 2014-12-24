@@ -1,171 +1,273 @@
 package us.kbase.kbasegenefamilies.prepare;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.strbio.IO;
+import org.strbio.util.*;
+import com.fasterxml.jackson.databind.*;
 
 import us.kbase.auth.AuthService;
 import us.kbase.auth.AuthToken;
-import us.kbase.common.service.Tuple3;
-import us.kbase.common.service.UObject;
-import us.kbase.kbasegenefamilies.DomainModel;
-import us.kbase.shock.client.BasicShockClient;
-import us.kbase.shock.client.ShockACLType;
-import us.kbase.shock.client.ShockNode;
-import us.kbase.shock.client.ShockNodeId;
+import us.kbase.common.service.*;
+import us.kbase.workspace.*;
+import us.kbase.kbasegenomes.*;
+import us.kbase.kbasegenefamilies.*;
 
 public class DomainModelLibPreparation {
-    private static final String shockUrl = "https://kbase.us/services/shock-api/";
-    private static final String libFolder = "/Users/rsutormin/Programs/eclipse/workspace/gene_families/dbs/";
-    private static final String[] pfamLibs = {"Cog", "Smart"};
-    private static final String[] hmmLibs = {"Pfam-A.hmm", "TIGRFAMs_14.0_HMM.LIB"};
-	
+    private static final String wsUrl = "https://kbase.us/services/ws/";
+    private static final String domainWsName = "KBasePublicGeneDomains";
+    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
+
     public static void main(String[] args) throws Exception {
-	for (String lib : pfamLibs)
-	    parseCdd(lib);
-	for (String lib : hmmLibs)
-	    parseHmm(lib);
+	/*
+	  parseDomainLibrary("COGs-CDD-3.12",
+			     "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			     "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
+			     "3.12",
+			     "2014-10-03",
+			     "COG",
+			     "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
+	parseDomainLibrary("CDD-NCBI-curated-3.12",
+			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			   "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
+			   "3.12",
+			   "2014-10-03",
+			   "cd",
+			   "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
+	parseDomainLibrary("SMART-6.0-CDD-3.12",
+			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			   "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
+			   "6.0",
+			   "2014-10-03",
+			   "smart",
+			   "http://smart.embl-heidelberg.de/smart/do_annotation.pl?DOMAIN=");
+	parseDomainLibrary("Pfam-27.0",
+			   "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam27.0/Pfam-A.hmm.gz",
+			   "/kb/dev_container/modules/gene_families/data/db/Pfam-A.hmm",
+			   "27.0",
+			   "2013-03-14",
+			   "PF",
+			   "http://pfam.xfam.org/family/");
+	*/
+	parseDomainLibrary("TIGRFAMs-15.0",
+			   "ftp://ftp.jcvi.org/pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz",
+			   "/kb/dev_container/modules/gene_families/data/db/TIGRFAMs_15.0_HMM.LIB",
+			   "15.0",
+			   "2014-09-17",
+			   "TIGR",
+			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
     }
-	
-    private static Map<String, String> prepareShockNodes(String libName, String token) throws Exception {
-	File dir = new File(libFolder);
-	Map<String, String> ret = new TreeMap<String, String>();
-	for (File f : dir.listFiles()) {
-	    if (!f.isFile())
-		continue;
-	    if (!f.getName().startsWith(libName))
-		continue;
-	    AuthToken auth = new AuthToken(token);
-	    BasicShockClient client = new BasicShockClient(new URL(shockUrl), auth);
-	    InputStream is = new BufferedInputStream(new FileInputStream(f));
-	    ShockNode sn = client.addNode(new TreeMap<String, Object>(), is, f.getName(), "JSON");
-	    String shockNodeId = sn.getId().getId();
-	    String user = auth.getClientId();
-	    client.removeFromNodeAcl(sn.getId(), Arrays.asList(user), new ShockACLType(ShockACLType.READ));
-	    ret.put(f.getName(), shockNodeId);
-	    System.out.println(f.getName() + "\t" + shockNodeId);
+    
+    /**
+       Parses a DomainLibrary out of a set of downloaded CDD files.
+       The info for each DomainModel is parsed from cddid.tbl.gz,
+       which should have already been downloaded by prepare_3rd_party_dbs.sh
+    */
+    private static String parseDomainLibrary(String id,
+					     String sourceURL,
+					     String fileName,
+					     String version,
+					     String releaseDate,
+					     String prefix,
+					     String xref) throws Exception {
+
+	System.out.println("Making domain library "+id);
+
+	String source = null;
+	String program = null;
+	if (sourceURL.indexOf("cdd") > 0) {
+	    source = "CDD";
+	    program = "rpsblast-2.2.30";
 	}
-	new ObjectMapper().writeValue(new File(dir, "files_" + libName + ".json"), ret);
-	return ret;
-    }
+	else if (sourceURL.indexOf("Pfam") > 0) {
+	    source = "Pfam";
+	    program = "hmmscan-3.1b1";
+	}
+	else if (sourceURL.indexOf("TIGRFAMs") > 0) {
+	    source = "TIGRFAMs";
+	    program = "hmmscan-3.1b1";
+	}
+	else throw new Exception("unknown domain library type");
+
+	DomainLibrary dl = new DomainLibrary()
+	    .withId(id)
+	    .withSource(source)
+	    .withSourceUrl(sourceURL)
+	    .withVersion(version)
+	    .withReleaseDate(releaseDate)
+	    .withProgram(program)
+	    .withDomainPrefix(prefix)
+	    .withDbxrefPrefix(xref)
+	    .withLibraryFiles(null);
+
+	Map<String,DomainModel> domains;
+	if (source.equals("CDD"))
+	    domains = parseCDDDomains(fileName,
+				      prefix);
+	else
+	    domains = parseHMMDomains(fileName);
 	
-    private static List<DomainModel> parseHmm(String libName) throws Exception {
-	List<DomainModel> ret = new ArrayList<DomainModel>();
-	BufferedReader br = new BufferedReader(new FileReader(new File(libFolder, libName)));
-	String acc = null;
-	String name = null;
-	String desc = null;
-	Integer leng = null;
-	for (int lnum = 0;; lnum++) {
-	    String l = br.readLine();
-	    if (l == null)
-		break;
-	    if (l.length() < 6)
-		continue;
-	    String key = l.substring(0, 6).trim();
-	    String value = l.substring(6).trim();
-	    if (key.equals("ACC")) {
-		acc = value;
-	    } else if (key.equals("NAME")) {
-		name = value;
-	    } else if (key.equals("DESC")) {
-		desc = value;
-	    } else if (key.equals("LENG")) {
-		leng = Integer.parseInt(value);
-	    } else if (key.equals("HMM")) {
-		if (acc == null || desc == null || leng == null) {
-		    br.close();
-		    throw new IllegalStateException("Wrong line in [" + libName + ":" + lnum + "]: " + l);
-		}
-		ret.add(new DomainModel().withAccession(acc).withLength((long)leng)
-			.withDescription(desc).withModelType("PSSM").withName(name));
-		acc = null;
-		name = null;
-		desc = null;
-		leng = null;
-				
+	dl.setDomains(domains);
+	Vector<Handle>libraryFiles = new Vector<Handle>();
+	dl.setLibraryFiles(libraryFiles);
+
+	return saveDomainLibrary(dl,id);
+    }
+    
+    /**
+       Creates a set of DomainModels for CDD domains.  The info for
+       each DomainModel is parsed from a file (should generally be
+       cddid.tbl.gz, which is downloaded by prepare_3rd_party_dbs.sh)
+    */
+    private static Map<String,DomainModel> parseCDDDomains(String fileName,
+							   String prefix) throws Exception {
+	Map<String,DomainModel> domains = new HashMap<String,DomainModel>();
+
+	BufferedReader infile = IO.openReader(fileName);
+	String buffer;
+	while ((buffer=infile.readLine()) != null) {
+	    StringTokenizer st = new StringTokenizer(buffer,"\t");
+	    DomainModel m = new DomainModel();
+	    m.setCddId(st.nextToken());
+	    String accession = st.nextToken();
+	    m.setAccession(accession);
+	    m.setName(st.nextToken());
+	    String description = st.nextToken();
+	    m.setDescription(description);
+	    m.setLength(StringUtil.atol(st.nextToken()));
+	    m.setModelType("PSSM");
+	    if (accession.startsWith(prefix))
+		domains.put(accession,m);
+	}
+	infile.close();
+
+	return domains;
+    }
+
+    /**
+       Creates a set of DomainModels from a HMM library.  The info for
+       each DomainModel is parsed from two files: the HMM library itself,
+       and if suffix is set, the "full" file that says what type of
+       domain each is.
+    */
+    private static Map<String,DomainModel> parseHMMDomains(String fileName) throws Exception {
+	Map<String,DomainModel> domains = new HashMap<String,DomainModel>();
+
+	BufferedReader infile = IO.openReader(fileName);
+	String name= null, acc=null, desc=null;
+	double tc=0.0;
+	long l=0;
+
+	while (infile.ready()) {
+	    String buffer = infile.readLine();
+
+	    if (buffer.startsWith("NAME "))
+		name = buffer.substring(6).trim();
+	    else if (buffer.startsWith("DESC "))
+		desc = buffer.substring(6).trim();
+	    else if (buffer.startsWith("TC "))
+		tc = StringUtil.atod(buffer.substring(6));
+	    else if (buffer.startsWith("ACC "))
+		acc = buffer.substring(6).trim();
+	    else if (buffer.startsWith("LENG "))
+		l = StringUtil.atol(buffer.substring(6));
+	    else if (buffer.startsWith("HMM ")) {
+		DomainModel m = new DomainModel()
+		    .withAccession(acc)
+		    .withName(name)
+		    .withDescription(desc)
+		    .withLength(l)
+		    .withModelType("HMM-Family");
+		domains.put(acc,m);
 	    }
 	}
-	br.close();
-	UObject.getMapper().writeValue(new File(libFolder, "domains_" + libName + ".json"), ret);
-	return ret;
-    }
+	infile.close();
 
-    private static List<DomainModel> parseCdd(String libName) throws Exception {
-	String prefix = libName.toLowerCase();
-	List<DomainModel> ret = new ArrayList<DomainModel>();
-	BufferedReader br = new BufferedReader(new FileReader(new File(libFolder, "cddid.tbl")));
-	while (true) {
-	    String l = br.readLine();
-	    if (l == null)
-		break;
-	    String[] parts = l.split(Pattern.quote("\t"));
-	    String inner = parts[0];
-	    String acc = parts[1];
-	    if (!acc.toLowerCase().startsWith(prefix))
-		continue;
-	    String name = parts[2];
-	    String desc = parts[3];
-	    int leng = Integer.parseInt(parts[4]);
-	    ret.add(new DomainModel().withAccession(acc).withCddId(inner).withLength((long)leng)
-		    .withDescription(desc).withModelType("PSSM").withName(name));
+	// hack to get Pfam domain types
+	if (fileName.indexOf("Pfam") > -1) {
+	    int pos = fileName.lastIndexOf(".");
+	    fileName = fileName.substring(0,pos)+".full.gz";
+
+	    infile = IO.openReader(fileName);
+	    acc = null;
+	    while (infile.ready()) {
+		String buffer = infile.readLine();
+		if (buffer.startsWith("# STOCK"))
+		    acc = null;
+		else if (buffer.startsWith("#=GF AC "))
+		    acc = buffer.substring(10);
+		else if (buffer.startsWith("#=GF TP ")) {
+		    String domainType = buffer.substring(10);
+		    DomainModel m = domains.get(acc);
+		    if (m != null)
+			m.setModelType("HMM-"+domainType);
+		}
+	    }
+	    infile.close();
 	}
-	br.close();
-	UObject.getMapper().writeValue(new File(libFolder, "domains_" + libName + ".json"), ret);
-	return ret;
+
+	return domains;
     }
-	
-    private static String token() throws Exception {
-	return token(props(new File("config_prod.cfg")));
+    
+    /**
+       saves a DomainLibrary in the public domain workspace, under
+       a given ID.  Returns ref to the object.
+    */
+    private static String saveDomainLibrary(DomainLibrary dl,
+					    String id) throws Exception {
+	WorkspaceClient wc = createWsClient(getDevToken());
+	String dlRef =
+	    getRefFromObjectInfo(wc.saveObjects(new SaveObjectsParams()
+			   .withWorkspace(domainWsName)
+			   .withObjects(Arrays.asList(new ObjectSaveData()
+						      .withType(domainLibraryType)
+						      .withName(id)
+						      .withData(new UObject(dl))))).get(0));
+
+	return dlRef;
     }
-	
-    private static String token(Properties props) throws Exception {
-	String user = props.getProperty("user");
-	String password = props.getProperty("password");
-	if (user == null && password == null)
-	    return null;
-	return AuthService.login(user, password).getToken().toString();
+    
+    /**
+       creates a workspace client; if token is null, client can
+       only read public workspaces
+    */
+    public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
+	WorkspaceClient rv = null;
+	if (token==null)
+	    rv = new WorkspaceClient(new URL(wsUrl));
+	else
+	    rv = new WorkspaceClient(new URL(wsUrl),token);
+	rv.setAuthAllowedForHttp(true);
+	return rv;
     }
 
-    private static Properties props(File configFile) throws Exception {
-	Properties props = new Properties();
-	if (configFile.exists()) {
-	    InputStream is = new FileInputStream(configFile);
-	    props.load(is);
-	    is.close();
-	}
-	return props;
-    }
-
-    private static void checkShockNodeIsPublic(String shockNodeId, OutputStream os) throws Exception {
+    /**
+       gets the auth token out of the properties file.  To create
+       it on your dev instance, do:
+       <pre>
+       kbase-login (your user name)
+       kbase-whoami -t
+       </pre>
+       Take the resulting text (starting with "un=") and put it in
+       the auth.properties file, as auth.token.  Replace the text
+       in the file that says "paste token here" with your token.
+    */
+    public static AuthToken getDevToken() throws Exception {
+	Properties prop = new Properties();
 	try {
-	    AuthToken token = new AuthToken(token(props(new File("config_dev.cfg"))));
-	    BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
-	    client.getFile(new ShockNodeId(shockNodeId), os);
-	    os.close();
-	    System.out.println("Shock node was read");
-	} catch (Exception ex) {
-	    System.out.println("Error reading shock node: " + ex.getMessage());
+	    prop.load(DomainModelLibPreparation.class.getClassLoader().getResourceAsStream("auth.properties"));
 	}
+	catch (IOException e) {
+	}
+	catch (SecurityException e) {
+	}
+	String value = prop.getProperty("auth.token", null);
+	return new AuthToken(value);
     }
 
-    private static void removeShockNode(String shockNodeId) throws Exception {
-	AuthToken token = new AuthToken(token());
-	BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
-	client.deleteNode(new ShockNodeId(shockNodeId));
+    private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
+	return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
     }
 }

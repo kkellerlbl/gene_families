@@ -68,7 +68,7 @@
     </unzip>
     <jar destfile="${dist}/${jar.file}" basedir="${classes}">
       <manifest>
-        <attribute name="Main-Class" value="us.kbase.kbasegenefamilies.test.EColiTest"/>
+        <attribute name="Main-Class" value="us.kbase.kbasegenefamilies.prepare.DomainModelLibPreparation"/>
       </manifest>
     </jar>
   </target>
