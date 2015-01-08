@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -69,16 +70,117 @@ public class DomainSearchTask {
 	final DomainModelSet dms = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 	final Genome genome = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
 	Map<String,String> domainLibMap = dms.getDomainLibs();
+	DomainAnnotation rv = makeBlankDomainAnnotation(genome,
+							genomeRef);
+	
 	for (String id : domainLibMap.values()) {
-	    // should add all these together; instead, just
-	    // returns the first one:
 	    DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
-	    if (dl.getProgram().equals("rpsblast-2.2.30"))
-		return runDomainSearchPSSM(genome, genomeRef, dl);
+	    if (dl.getProgram().equals("rpsblast-2.2.30")) {
+		DomainAnnotation results = runDomainSearchPSSM(genome, genomeRef, dl);
+		combineData(results,rv);
+	    }
 	    else
 		throw new Exception("unsupported program");
+		
 	}
-	return null;
+	return rv;
+    }
+
+    /**
+       makes a DomainAnnotation object with everything except the
+       actual annotation data
+    */
+    public DomainAnnotation makeBlankDomainAnnotation(Genome genome,
+						      String genomeRef) {
+	String genomeName = genome.getScientificName();
+	final Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contig2prots = 
+	    new TreeMap<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>>();
+	int protCount = 0;
+	final Map<Integer, Tuple2<String, Long>> posToContigFeatIndex = new LinkedHashMap<Integer, Tuple2<String, Long>>();
+	Map<String, Tuple2<String, Long>> featIdToContigFeatIndex = new TreeMap<String, Tuple2<String, Long>>();
+
+	for (int pos = 0; pos < genome.getFeatures().size(); pos++) {
+	    Feature feat = genome.getFeatures().get(pos);
+	    String seq = feat.getProteinTranslation();
+	    if (feat.getLocation().size() != 1)
+		continue;
+	    Tuple4<String, Long, String, Long> loc = feat.getLocation().get(0);
+	    String contigId = loc.getE1();
+	    if (seq != null && !seq.isEmpty()) {
+		Tuple2<String, Long> contigFeatIndex = new Tuple2<String, Long>().withE1(contigId);
+		posToContigFeatIndex.put(pos, contigFeatIndex);
+		featIdToContigFeatIndex.put(feat.getId(), contigFeatIndex);
+		protCount++;
+	    }
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
+	    if (prots == null) {
+		prots = new ArrayList<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>();
+		contig2prots.put(contigId, prots);
+	    }
+	    long start = loc.getE3().equals("-") ? (loc.getE2() - loc.getE4() + 1) : loc.getE2();
+	    long stop = loc.getE3().equals("-") ? loc.getE2() : (loc.getE2() + loc.getE4() - 1);
+	    long dir = loc.getE3().equals("-") ? -1 : +1;
+	    prots.add(new Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>()
+		      .withE1(feat.getId()).withE2(start).withE3(stop).withE4(dir)
+		      .withE5(new TreeMap<String, List<Tuple5<Long, Long, Double, Double, Double>>>()));
+	}
+
+	if (protCount == 0)
+	    throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
+
+	Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
+	for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
+	    String contigId = genome.getContigIds().get(contigPos);
+	    if (!contig2prots.containsKey(contigId))
+		continue;
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
+	    Collections.sort(prots, new Comparator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>() {
+		    @Override
+			public int compare(Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> o1,
+					   Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> o2) {
+			return Long.compare(o1.getE2(), o2.getE2());
+		    }
+		});
+	    long contigSize = genome.getContigLengths().get(contigPos);
+	    contigSizes.put(contigId, new Tuple2<Long, Long>().withE1(contigSize).withE2((long)prots.size()));
+	    for (int index = 0; index < prots.size(); index++) {
+		String featId = prots.get(index).getE1();
+		Tuple2<String, Long> contigFeatIndex = featIdToContigFeatIndex.get(featId);
+		if (contigFeatIndex != null)
+		    contigFeatIndex.setE2((long)index);
+	    }
+	}
+	
+	DomainAnnotation rv = new DomainAnnotation()
+	    .withGenomeRef(genomeRef)
+	    .withData(contig2prots)
+	    .withContigToSizeAndFeatureCount(contigSizes)
+	    .withFeatureToContigAndIndex(featIdToContigFeatIndex);
+	return rv;
+    }
+
+    /**
+       combines annotation data from two DomainAnnotation objects;
+       must be from the same genome
+    */
+    public void combineData(DomainAnnotation source,
+			    DomainAnnotation target) throws Exception {
+	if (!source.getGenomeRef().equals(target.getGenomeRef()))
+	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different genomes can't be combined");
+	
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> sourceData = source.getData();
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> targetData = target.getData();
+	for (String contigID : sourceData.keySet()) {
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> sourceElements = sourceData.get(contigID);
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> targetElements = targetData.get(contigID);
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> sIterator = sourceElements.listIterator();
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> tIterator = targetElements.listIterator();
+	    while (sIterator.hasNext()) {
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> sElement = sIterator.next();
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> tElement = tIterator.next();
+		tElement.getE5().putAll(sElement.getE5());
+	    }
+	}
     }
 
     /**
@@ -148,7 +250,7 @@ public class DomainSearchTask {
 	    if (protCount == 0)
 		throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
 
-	    // make file of all proteins
+	    // make more indices
 	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
 	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
 		String contigId = genome.getContigIds().get(contigPos);

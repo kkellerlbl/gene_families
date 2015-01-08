@@ -91,14 +91,12 @@ public class EColiTest {
 						       smartRef,
 						       ecoliRef);
 
-	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("SMART-g.0")
+						  .withName("SMART-g.0-2")
 						  .withData(new UObject(results)))));
-	*/
     }
 
     /**
