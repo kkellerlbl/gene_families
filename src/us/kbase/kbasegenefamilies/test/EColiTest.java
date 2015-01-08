@@ -30,6 +30,7 @@ public class EColiTest {
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation-1.0";
     private static final String ecoliRef = genomeWsName+"/kb|g.0";
     private static final String smartRef = domainWsName+"/SMART-only";
+    private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
     /**
        check that we can read E coli genome from WS or file;
@@ -76,9 +77,9 @@ public class EColiTest {
 
     /**
        Check that we can annotate E. coli with SMART
-    */
     @Test
-	public void searchEColi() throws Exception {
+    */
+	public void searchEColiPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -91,11 +92,38 @@ public class EColiTest {
 						       smartRef,
 						       ecoliRef);
 
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withName("SMART-g.0-2")
+						  .withData(new UObject(results)))));
+	*/
+    }
+
+    /**
+       Check that we can annotate E. coli with TIGRFAMs
+    */
+    @Test
+	public void searchEColiHMM() throws Exception {
+
+	AuthToken token = getDevToken();
+	WorkspaceClient wc = createWsClient(token);
+
+	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+
+	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+	
+	DomainAnnotation results = dst.runDomainSearch(token.toString(),
+						       tigrRef,
+						       ecoliRef);
+
+	wc.saveObjects(new SaveObjectsParams()
+		       .withWorkspace(domainWsName)
+		       .withObjects(Arrays.asList(new ObjectSaveData()
+						  .withType(domainAnnotationType)
+						  .withName("TIGR-g.0")
 						  .withData(new UObject(results)))));
     }
 
