@@ -1,21 +1,7 @@
 package us.kbase.kbasegenefamilies;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.io.*;
+import java.util.*;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -37,11 +23,14 @@ import us.kbase.kbasegenomes.Genome;
 import us.kbase.workspace.ObjectData;
 import us.kbase.workspace.ObjectIdentity;
 
+import org.strbio.IO;
+import org.strbio.io.*;
+import org.strbio.util.*;
+
 /**
    This class runs a domain search against a single genome, using
    RPS-BLAST and HMMER.  Domain hits are saved in DomainAnnotation
    workspace objects.
-   --JMC, 12/17/14
 */
 public class DomainSearchTask {
     private static String MAX_BLAST_EVALUE = "1e-04";
@@ -60,20 +49,56 @@ public class DomainSearchTask {
     }
 
     /**
-       Runs a domain search on a single genome, returning annotations
-       and alignments.  Takes a domainModelSetRef as input, which is
-       prepared/searched as individual models.
+       Runs a domain search on a single genome, returning annotations.
+       Takes a domainModelSetRef as input, which is searched as
+       individual libraries.
     */
-    public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(String token, 
-								      String domainModelSetRef,
-								      String genomeRef) throws Exception {
-	domainModelSetRef = correctRef(token, domainModelSetRef);
-	File dbFile = getDomainModelSetDbFile(domainModelSetRef);
-	File mapFile = getDomainModelSetMapFile(domainModelSetRef);
-	final Map<String, Tuple2<String, String>> modelNameToRefConsensus = 
-	    prepareDomainModels(token, domainModelSetRef, dbFile, mapFile);
+    public DomainAnnotation runDomainSearch(String token,
+					    String domainModelSetRef,
+					    String genomeRef) throws Exception {
+	final DomainModelSet dms = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(domainModelSetRef))).get(0).getData().asClassInstance(DomainModelSet.class);
 	final Genome genome = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
-	return runDomainSearch(genome, genomeRef, dbFile, modelNameToRefConsensus);
+	Map<String,String> domainLibMap = dms.getDomainLibs();
+	DomainAnnotation rv = null;
+
+	// collect one set of annotations per library
+	for (String id : domainLibMap.values()) {
+	    DomainLibrary dl = storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(id))).get(0).getData().asClassInstance(DomainLibrary.class);
+	    DomainAnnotation results = runDomainSearch(genome, genomeRef, dl);
+
+	    // combine all the results into one object
+	    if (rv==null)
+		rv = results;
+	    else 
+		combineData(results,rv);
+	}
+	return rv;
+    }
+
+    /**
+       combines annotation data from two DomainAnnotation objects;
+       must be from the same genome.  Note that this will fail if
+       results are in different order, or if two libraries have
+       models with the same accessions
+    */
+    public void combineData(DomainAnnotation source,
+			    DomainAnnotation target) throws Exception {
+	if (!source.getGenomeRef().equals(target.getGenomeRef()))
+	    throw new IllegalArgumentException("Error: DomainAnnotation objects from different genomes can't be combined");
+	
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> sourceData = source.getData();
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> targetData = target.getData();
+	for (String contigID : sourceData.keySet()) {
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> sourceElements = sourceData.get(contigID);
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> targetElements = targetData.get(contigID);
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> sIterator = sourceElements.listIterator();
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> tIterator = targetElements.listIterator();
+	    while (sIterator.hasNext()) {
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> sElement = sIterator.next();
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> tElement = tIterator.next();
+		tElement.getE5().putAll(sElement.getE5());
+	    }
+	}
     }
 
     /**
@@ -81,13 +106,30 @@ public class DomainSearchTask {
        and alignments.  Takes a map of individual models and a model
        db file as input.
     */
-    public Tuple2<DomainAnnotation, DomainAlignments> runDomainSearch(Genome genome,
-								      String genomeRef,
-								      File dbFile, 
-								      final Map<String, Tuple2<String, String>> modelNameToRefConsensus) throws Exception {
+    public DomainAnnotation runDomainSearch(Genome genome,
+					    String genomeRef,
+					    DomainLibrary dl) throws Exception {
+						
 	String genomeName = genome.getScientificName();
+	File dbFile = new File(dl.getLibraryFiles().get(0).getFileName());
 	File fastaFile = File.createTempFile("proteome", ".fasta", tempDir);
-	File tabFile = null;
+	File outFile = null;
+
+	final Map<String,Tuple2<String,String>> modelNameToRefConsensus = new HashMap<String,Tuple2<String,String>>();
+
+	// note that we don't actually have consensus sequences for
+	// each model, so we're making a dummy object to work with
+	// Roman's legacy code:
+	Map<String,DomainModel> libDomains = dl.getDomains();
+	for (String accession : libDomains.keySet()) {
+	    DomainModel m = libDomains.get(accession);
+	    Tuple2<String,String>domainModelRefConsensus =
+		new Tuple2<String,String>();
+	    domainModelRefConsensus.setE1(accession);
+	    domainModelRefConsensus.setE2(new String("TEST"));
+	    modelNameToRefConsensus.put(accession, domainModelRefConsensus);
+	}
+	
 	try {
 	    final Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contig2prots = 
 		new TreeMap<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>>();
@@ -95,6 +137,8 @@ public class DomainSearchTask {
 	    int protCount = 0;
 	    final Map<Integer, Tuple2<String, Long>> posToContigFeatIndex = new LinkedHashMap<Integer, Tuple2<String, Long>>();
 	    Map<String, Tuple2<String, Long>> featIdToContigFeatIndex = new TreeMap<String, Tuple2<String, Long>>();
+	    // write out each protein sequentially into a FASTA file,
+	    // keeping track of its position in the genome
 	    try {
 		for (int pos = 0; pos < genome.getFeatures().size(); pos++) {
 		    Feature feat = genome.getFeatures().get(pos);
@@ -129,7 +173,7 @@ public class DomainSearchTask {
 	    if (protCount == 0)
 		throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
 
-	    // make file of all proteins
+	    // make more indices
 	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
 	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
 		String contigId = genome.getContigIds().get(contigPos);
@@ -152,153 +196,204 @@ public class DomainSearchTask {
 			contigFeatIndex.setE2((long)index);
 		}
 	    }
-	    tabFile = runRpsBlast(dbFile, fastaFile);
+
+	    // run the appropriate annotation program
+	    String program = dl.getProgram();
+
 	    final Map<String, Map<String, Map<String, String>>> modelToFeatureToStartToAlignment = 
 		new TreeMap<String, Map<String, Map<String, String>>>();
-	    final long[] stat = {0L};
-	    RpsBlastParser.processRpsOutput(tabFile, new RpsBlastParser.RpsBlastCallback() {
-		    @Override
-			public void next(String query, String subject, int qstart, String qseq,
-					 int sstart, String sseq, String evalue, double bitscore,
-					 double ident) throws Exception {
-			Tuple2<String,String> domainModelRefConsensus = modelNameToRefConsensus.get(subject);
-			if (domainModelRefConsensus == null)
-			    throw new IllegalStateException("Unexpected subject name in prs blast result: " + subject);
-			int featurePos = Integer.parseInt(query);
-			/*
-			String consensus = domainModelRefConsensus.getE2();
-			int alnLen = consensus.length();
-			String alignedSeq = AlignUtil.removeGapsFromSubject(alnLen, qseq, sstart - 1, sseq);
-			int coverage = 100 - AlignUtil.getGapPercent(alignedSeq);
-			if (coverage < MIN_COVERAGE)
-			    return;
-			*/
-			int coverage = 100;
-			String alignedSeq = "TEST";
-			Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
-			long featureIndex = contigIdFeatIndex.getE2();
-			Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(
-														 contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
-			String domainRef = domainModelRefConsensus.getE1();
-			List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(domainRef);
-			if (places == null) {
-			    places = new ArrayList<Tuple5<Long, Long, Double, Double, Double>>();
-			    domains.put(domainRef, places);
+	    
+	    if (program.equals("rpsblast-2.2.30")) {		
+		outFile = runRpsBlast(dbFile, fastaFile);
+		RpsBlastParser.processRpsOutput(outFile, new RpsBlastParser.RpsBlastCallback() {
+			@Override
+			    public void next(String query, String subject, int qstart, String qseq,
+					     int sstart, String sseq, String evalue, double bitscore,
+					     double ident) throws Exception {
+			    Tuple2<String,String> domainModelRefConsensus = modelNameToRefConsensus.get(subject);
+			    if (domainModelRefConsensus == null)
+				throw new IllegalStateException("Unexpected subject name in prs blast result: " + subject);
+			    int featurePos = Integer.parseInt(query);
+			    /*
+			      String consensus = domainModelRefConsensus.getE2();
+			      int alnLen = consensus.length();
+			      String alignedSeq = AlignUtil.removeGapsFromSubject(alnLen, qseq, sstart - 1, sseq);
+			      int coverage = 100 - AlignUtil.getGapPercent(alignedSeq);
+			      if (coverage < MIN_COVERAGE)
+			      return;
+			    */
+			    int coverage = 100;
+			    String alignedSeq = "TEST"; // fake alignments
+			    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
+			    long featureIndex = contigIdFeatIndex.getE2();
+			    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
+			    String domainRef = domainModelRefConsensus.getE1();
+			    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(domainRef);
+			    if (places == null) {
+				places = new ArrayList<Tuple5<Long, Long, Double, Double, Double>>();
+				domains.put(domainRef, places);
+			    }
+			    int qlen = AlignUtil.removeGaps(qseq).length();
+			    places.add(new Tuple5<Long, Long, Double, Double, Double>()
+				       .withE1((long)qstart)
+				       .withE2((long)qstart + qlen - 1)
+				       .withE3(Double.parseDouble(evalue))
+				       .withE4(bitscore)
+				       .withE5(coverage / 100.0));
+			    Map<String, Map<String, String>> featureToStartToAlignment = 
+				modelToFeatureToStartToAlignment.get(domainRef);
+			    if (featureToStartToAlignment == null) {
+				featureToStartToAlignment = new TreeMap<String, Map<String, String>>();
+				modelToFeatureToStartToAlignment.put(domainRef, featureToStartToAlignment);
+			    }
+			    String contigId = contigIdFeatIndex.getE1();
+			    String featureId = contig2prots.get(contigId).get((int)featureIndex).getE1();
+			    Map<String, String> startToAlignment = featureToStartToAlignment.get(featureId);
+			    if (startToAlignment == null) {
+				startToAlignment = new TreeMap<String, String>();
+				featureToStartToAlignment.put(featureId, startToAlignment);
+			    }
+			    startToAlignment.put("" + qstart, alignedSeq);
 			}
-			int qlen = AlignUtil.removeGaps(qseq).length();
-			places.add(new Tuple5<Long, Long, Double, Double, Double>().withE1((long)qstart)
-				   .withE2((long)qstart + qlen - 1).withE3(Double.parseDouble(evalue))
-				   .withE4(bitscore).withE5(coverage / 100.0));
-			Map<String, Map<String, String>> featureToStartToAlignment = 
-			    modelToFeatureToStartToAlignment.get(domainRef);
-			if (featureToStartToAlignment == null) {
-			    featureToStartToAlignment = new TreeMap<String, Map<String, String>>();
-			    modelToFeatureToStartToAlignment.put(domainRef, featureToStartToAlignment);
-			}
-			String contigId = contigIdFeatIndex.getE1();
-			String featureId = contig2prots.get(contigId).get((int)featureIndex).getE1();
-			Map<String, String> startToAlignment = featureToStartToAlignment.get(featureId);
-			if (startToAlignment == null) {
-			    startToAlignment = new TreeMap<String, String>();
-			    featureToStartToAlignment.put(featureId, startToAlignment);
-			}
-			startToAlignment.put("" + qstart, alignedSeq);
-			stat[0] += alignedSeq.length();
+		    });
+	    }
+	    else if (program.equals("hmmscan-3.1b1")) {
+		outFile = runHmmer(dbFile, fastaFile);
+		BufferedReader infile = IO.openReader(outFile.getPath());
+		if (infile==null)
+		    throw new Exception("failed to open HMMER output");
+
+		int featurePos = -1;
+		while (infile.ready()) {
+		    String buffer = infile.readLine();
+		    if (buffer==null) {
+			infile.close();
+			break;
 		    }
-		});
-	    Tuple2<DomainAnnotation, DomainAlignments> ret = new Tuple2<DomainAnnotation, DomainAlignments>()
-		.withE1(new DomainAnnotation().withGenomeRef(genomeRef).withData(contig2prots)
-			.withContigToSizeAndFeatureCount(contigSizes)
-			.withFeatureToContigAndIndex(featIdToContigFeatIndex))
-		.withE2(new DomainAlignments().withGenomeRef(genomeRef)
-			.withAlignments(modelToFeatureToStartToAlignment));
-	    return ret;
-	} finally {
+		    if (buffer.startsWith("Query:"))
+			featurePos = StringUtil.atoi(buffer,7);
+		    else if (buffer.startsWith("Domain annotation for each model (and alignments):")) {
+			buffer = infile.readLine();
+
+			while (buffer.startsWith(">> ")) {
+			    Tuple2<String,String> domainModelRefConsensus = null;
+			    StringTokenizer st = new StringTokenizer(buffer);
+			    try {
+				st.nextToken();
+				String modelName = st.nextToken();
+				// System.out.println("model: "+modelName);
+
+				domainModelRefConsensus = modelNameToRefConsensus.get(modelName);
+				if (domainModelRefConsensus == null)
+				    throw new IllegalStateException("No recognized domain in HMMER output line '"+buffer+"'");
+			    }
+			    catch (NoSuchElementException e) {
+				throw new Exception("Format error in HMMER output line '"+buffer+"'");
+			    }
+			    buffer = infile.readLine();
+			    buffer = infile.readLine();
+			    buffer = infile.readLine();
+
+			    if (buffer.startsWith(">> "))
+				continue;
+
+			    while (buffer.length() > 0) {
+				st = new StringTokenizer(buffer.substring(7));
+				try {
+				    double score = StringUtil.atod(st.nextToken());
+				    st.nextToken(); // bias
+				    st.nextToken(); // c-evalue
+
+				    String eString = st.nextToken();  // i-evalue
+				    double log10E = 0.0;
+				    
+				    int expos = eString.indexOf("e-");
+				    if (expos==-1) {
+					double e = StringUtil.atod(eString);
+					if (e==0.0)
+					    log10E = -9999.0;
+					else {
+					    log10E = Math.log(e)/Math.log(10.0);
+					}
+				    }
+				    else {
+					log10E = (double)StringUtil.atoi(eString, expos+1);
+					double coef = StringUtil.atod(eString,0,expos);
+					if (coef > 0.0) {
+					    log10E += Math.log(coef)/Math.log(10.0);
+					}
+				    }
+
+				    int hStart = StringUtil.atoi(st.nextToken()) - 1;
+				    int hLength = StringUtil.atoi(st.nextToken()) - hStart;
+
+				    st.nextToken(); // bounds
+
+				    int start = StringUtil.atoi(st.nextToken()) - 1;
+				    int l = StringUtil.atoi(st.nextToken()) - start;
+
+				    // save this hit
+				    int coverage = 100;
+				    String alignedSeq = "TEST"; // fake alignments
+				    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
+				    long featureIndex = contigIdFeatIndex.getE2();
+				    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
+				    String domainRef = domainModelRefConsensus.getE1();
+				    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(domainRef);
+				    if (places == null) {
+					places = new ArrayList<Tuple5<Long, Long, Double, Double, Double>>();
+					domains.put(domainRef, places);
+				    }
+				    places.add(new Tuple5<Long, Long, Double, Double, Double>()
+					       .withE1((long)start)
+					       .withE2((long)start + l - 1)
+					       .withE3(log10E)
+					       .withE4(score)
+					       .withE5(coverage / 100.0));
+				    Map<String, Map<String, String>> featureToStartToAlignment = 
+					modelToFeatureToStartToAlignment.get(domainRef);
+				    if (featureToStartToAlignment == null) {
+					featureToStartToAlignment = new TreeMap<String, Map<String, String>>();
+					modelToFeatureToStartToAlignment.put(domainRef, featureToStartToAlignment);
+				    }
+				    String contigId = contigIdFeatIndex.getE1();
+				    String featureId = contig2prots.get(contigId).get((int)featureIndex).getE1();
+				    Map<String, String> startToAlignment = featureToStartToAlignment.get(featureId);
+				    if (startToAlignment == null) {
+					startToAlignment = new TreeMap<String, String>();
+					featureToStartToAlignment.put(featureId, startToAlignment);
+				    }
+				    startToAlignment.put("" + start, alignedSeq);
+				}
+				catch (NoSuchElementException e) {
+				    throw new Exception("Format error in HMMER output line '"+buffer+"'");
+				}
+				buffer = infile.readLine();
+			    }
+			}
+		    }
+		}
+	    }
+	    else
+		throw new Exception("unsupported domain search program "+program);
+	    
+	    DomainAnnotation rv = new DomainAnnotation()
+		.withGenomeRef(genomeRef)
+		.withData(contig2prots)
+		.withContigToSizeAndFeatureCount(contigSizes)
+		.withFeatureToContigAndIndex(featIdToContigFeatIndex);
+	    return rv;
+	}
+	finally {
+	    /*
 	    try { fastaFile.delete(); } catch (Exception ignore) {}
-	    if (tabFile != null)
-		try { tabFile.delete(); } catch (Exception ignore) {}
+	    if (outFile != null)
+		try { outFile.delete(); } catch (Exception ignore) {}
+	    */
 	}
     }
 
     
-    /**
-      Gets information on domains from a domainModelSetRef object
-    */
-    public void prepareDomainModels(String token, String domainModelSetRef)
-	throws IOException, JsonParseException, JsonMappingException,
-	       Exception, JsonGenerationException {
-	File dbFile = getDomainModelSetDbFile(domainModelSetRef);
-	File mapFile = getDomainModelSetMapFile(domainModelSetRef);
-	prepareDomainModels(token, domainModelSetRef, dbFile, mapFile);
-    }
-	
-
-    /**
-       Maps names from a DomainModels object to ???
-     */
-    public Map<String, String> loadDomainModelRefToNameMap(String token, 
-							   String domainModelSetRef) throws Exception {
-	File dbFile = getDomainModelSetDbFile(domainModelSetRef);
-	File mapFile = getDomainModelSetMapFile(domainModelSetRef);
-	Map<String, Tuple2<String, String>> nameToRef = prepareDomainModels(token, domainModelSetRef, dbFile, mapFile);
-	Map<String, String> ret = new TreeMap<String, String>();
-	for (Map.Entry<String, Tuple2<String, String>> entry : nameToRef.entrySet())
-	    ret.put(entry.getValue().getE1(), entry.getKey());
-	return ret;
-    }
-
-    /**
-       Prepares a RPS-BLAST database from a domainModelSet object.
-       Skips the actual formatting, since we're using pre-formatted
-       files.
-    */
-    private Map<String, Tuple2<String, String>> prepareDomainModels(String token,
-								    String domainModelSetRef,
-								    File dbFile,
-								    File mapFile)
-	throws IOException, JsonParseException, JsonMappingException,
-	       Exception, JsonGenerationException {
-	final Map<String,Tuple2<String,String>> modelNameToRefConsensus;
-	/*
-	File dbFilePrepararion = new File(dbFile.getAbsolutePath() + ".preparation");
-	if (dbFilePrepararion.exists()) {
-	    System.out.println("Database [" + dbFile.getName() + "] seems to be preparing in parallel thread, so waiting...");
-	    while(true) {
-		Thread.sleep(1000);
-		if (!dbFilePrepararion.exists()) {
-		    System.out.println("Database [" + dbFile.getName() + "] seems to be ready to use");
-		    break;
-		}
-	    }
-	}
-	*/
-	if (mapFile.exists() && dbFile.exists()) {
-	    modelNameToRefConsensus = Utils.getMapper().readValue(mapFile, new TypeReference<Map<String,Tuple2<String,String>>>() {});
-	}
-	else {
-	    throw new Exception("DomainSearchTask: domain model library must already be formatted");
-	    /*
-	    dbFilePrepararion.createNewFile();
-	    List<File> smpFiles = new ArrayList<File>();
-	    modelNameToRefConsensus = new TreeMap<String, Tuple2<String,String>>();
-	    Map<String,String> modelRefToNameRet = new HashMap<String, String>(); 
-	    prepareScoremats(token, domainModelSetRef, smpFiles, modelRefToNameRet, modelNameToRefConsensus);
-	    formatRpsDb(smpFiles, dbFile);
-	    Utils.getMapper().writeValue(mapFile, modelNameToRefConsensus);
-	    dbFilePrepararion.delete();
-	    */
-	}
-	return modelNameToRefConsensus;
-    }
-
-    /**
-       ???
-    */
-    private String correctRef(String token, String ref) throws Exception {
-	return getRefFromObjectInfo(storage.getObjects(token, Arrays.asList(new ObjectIdentity().withRef(ref))).get(0).getInfo());
-    }
-
-
     /**
        Formats a library made from a user-defined set of SMP (PSSM)
        files.  Not used by current code, which requires a pre-formatted
@@ -365,7 +460,8 @@ public class DomainSearchTask {
 
     
     /**
-       ???
+       Gets a reference to the object, from object info returned by
+       the workspace client
     */
     public static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {
 	return info.getE7() + "/" + info.getE1() + "/" + info.getE5();
@@ -412,16 +508,8 @@ public class DomainSearchTask {
 	return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".json");
     }
 
-    private File getDomainModelSetDbFile(String modelSetRef) {
-	return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".db");
-    }
-
-    private File getDomainModelSetMapFile(String modelSetRef) {
-	return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".map");
-    }
-
     public File getBinDir() {
-	File ret = new File(tempDir, "bin");
+	File ret = new File("/kb/dev_container/modules/gene_families/data/bin");
 	if (!ret.exists())
 	    ret.mkdir();
 	return ret;
@@ -442,6 +530,10 @@ public class DomainSearchTask {
 	return BinPreparator.prepareBin(getBinDir(), "rpsblast");
     }
 
+    private File getHmmerBin() throws Exception {
+	return BinPreparator.prepareBin(getBinDir(), "hmmscan");
+    }
+    
     /**
        Formats a RPS-BLAST database, using the same parameters
        used by CDD, according to:
@@ -506,7 +598,8 @@ public class DomainSearchTask {
 	FileOutputStream fos = new FileOutputStream(tempOutputFile);
 	try {
 	    Process p = Runtime.getRuntime().exec(CorrectProcess.arr(binPath,
-								     "-db", dbFile.getAbsolutePath(), "-query", fastaQuery.getAbsolutePath(), 
+								     "-db", dbFile.getAbsolutePath(),
+								     "-query", fastaQuery.getAbsolutePath(), 
 								     "-outfmt", RpsBlastParser.OUTPUT_FORMAT_STRING, 
 								     "-evalue", MAX_BLAST_EVALUE));
 	    errBaos = new ByteArrayOutputStream();
@@ -542,7 +635,59 @@ public class DomainSearchTask {
 	}
 	return tempOutputFile;
     }
-	
+
+    /**
+       Runs HMMER on a file
+    */
+    public File runHmmer(File dbFile, File fastaQuery) throws Exception {
+	File tempOutputFile = File.createTempFile("hmmer", ".txt", tempDir);
+	CorrectProcess cp = null;
+	ByteArrayOutputStream errBaos = null;
+	Exception err = null;
+	String binPath = getHmmerBin().getAbsolutePath();
+	int procExitValue = -1;
+	FileOutputStream fos = new FileOutputStream(tempOutputFile);
+	try {
+	    Process p = Runtime.getRuntime().exec(CorrectProcess.arr(binPath,
+								     "--acc",
+								     "--notextw",
+								     "--cut_tc",
+								     dbFile.getAbsolutePath(),
+								     fastaQuery.getAbsolutePath()));
+	    errBaos = new ByteArrayOutputStream();
+	    cp = new CorrectProcess(p, fos, "", errBaos, "");
+	    p.waitFor();
+	    errBaos.close();
+	    procExitValue = p.exitValue();
+	}
+	catch(Exception ex) {
+	    try{ 
+		errBaos.close(); 
+	    }
+	    catch (Exception ignore) {}
+	    try{ 
+		if(cp!=null) 
+		    cp.destroy(); 
+	    }
+	    catch (Exception ignore) {}
+	    err = ex;
+	}
+	finally {
+	    try { fos.close(); } catch (Exception ignore) {}
+	}
+	if (errBaos != null) {
+	    String err_text = new String(errBaos.toByteArray());
+	    if (err_text.length() > 0)
+		err = new Exception("HMMSCAN: " + err_text, err);
+	}
+	if (procExitValue != 0) {
+	    if (err == null)
+		err = new IllegalStateException("HMMSCAN exit code: " + procExitValue);
+	    throw err;
+	}
+	return tempOutputFile;
+    }
+    
     public void processRpsOutput(File results, RpsBlastParser.RpsBlastCallback callback) throws Exception {
 	RpsBlastParser.processRpsOutput(results, callback);
     }

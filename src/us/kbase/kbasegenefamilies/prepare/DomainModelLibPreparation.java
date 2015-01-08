@@ -19,18 +19,20 @@ public class DomainModelLibPreparation {
     private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
+    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
 
     public static void main(String[] args) throws Exception {
-	/*
-	  parseDomainLibrary("COGs-CDD-3.12",
-			     "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
-			     "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
-			     "3.12",
-			     "2014-10-03",
-			     "COG",
-			     "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
+	parseDomainLibrary("COGs-CDD-3.12",
+			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			   "/kb/dev_container/modules/gene_families/data/db/Cog",
+			   "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
+			   "3.12",
+			   "2014-10-03",
+			   "COG",
+			   "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
 	parseDomainLibrary("CDD-NCBI-curated-3.12",
 			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			   "/kb/dev_container/modules/gene_families/data/db/Cdd",
 			   "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
 			   "3.12",
 			   "2014-10-03",
@@ -38,6 +40,7 @@ public class DomainModelLibPreparation {
 			   "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
 	parseDomainLibrary("SMART-6.0-CDD-3.12",
 			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
+			   "/kb/dev_container/modules/gene_families/data/db/Smart",
 			   "/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz",
 			   "6.0",
 			   "2014-10-03",
@@ -46,28 +49,89 @@ public class DomainModelLibPreparation {
 	parseDomainLibrary("Pfam-27.0",
 			   "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam27.0/Pfam-A.hmm.gz",
 			   "/kb/dev_container/modules/gene_families/data/db/Pfam-A.hmm",
+			   "/kb/dev_container/modules/gene_families/data/db/Pfam-A.full.gz",
 			   "27.0",
 			   "2013-03-14",
 			   "PF",
 			   "http://pfam.xfam.org/family/");
-	*/
 	parseDomainLibrary("TIGRFAMs-15.0",
 			   "ftp://ftp.jcvi.org/pub/data/TIGRFAMs/TIGRFAMs_15.0_HMM.LIB.gz",
 			   "/kb/dev_container/modules/gene_families/data/db/TIGRFAMs_15.0_HMM.LIB",
+			   null,
 			   "15.0",
 			   "2014-09-17",
 			   "TIGR",
 			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
+
+	String[] libraries = new String[] {"SMART-6.0-CDD-3.12"};
+	
+	makeDomainModelSet("SMART-only",
+			   libraries);
+
+	libraries[0] = "TIGRFAMs-15.0";
+
+	makeDomainModelSet("TIGRFAMs-only",
+			   libraries);
+
+	libraries = new String[] { "COGs-CDD-3.12",
+				   "CDD-NCBI-curated-3.12",
+				   "SMART-6.0-CDD-3.12",
+				   "Pfam-27.0",				   
+				   "TIGRFAMs-15.0"};
+	
+	makeDomainModelSet("All",
+			   libraries);
+	
+    }
+
+    /**
+       Makes a DomainModelSet out of an array of libraries, which
+       must already exist in the public domain workspace, and saves
+       it in the public domain workspace with a specified ID,
+       and returns a ref to the saved object.
+    */
+    private static String makeDomainModelSet(String id,
+					     String[] libraryIDs) throws Exception {
+
+	System.out.println("Making domain model set "+id);
+
+	DomainModelSet dms = new DomainModelSet().withSetName(id);
+
+	Map<String,String> accessionToDescription = new HashMap<String,String>();
+	Map<String,String> domainPrefixMap = new HashMap<String,String>();
+	Map<String,String> domainLibs = new HashMap<String,String>();
+	
+	for (String libraryID : libraryIDs) {
+	    DomainLibrary dl = loadDomainLibrary(libraryID);
+	    String domainPrefix = dl.getDomainPrefix();
+	    domainLibs.put(domainPrefix, domainWsName+"/"+libraryID);
+	    String xref = dl.getDbxrefPrefix();
+	    domainPrefixMap.put(domainPrefix,xref);
+	    Map<String,DomainModel> domains = dl.getDomains();
+	    for (String accession : domains.keySet()) {
+		DomainModel m = domains.get(accession);
+		String description = m.getDescription();
+		accessionToDescription.put(accession,description);
+	    }
+	}
+	dms.setDomainAccessionToDescription(accessionToDescription);
+	dms.setDomainPrefixToDbxrefUrl(domainPrefixMap);
+	dms.setDomainLibs(domainLibs);
+
+	return saveDomainModelSet(dms,id);
     }
     
     /**
        Parses a DomainLibrary out of a set of downloaded CDD files.
        The info for each DomainModel is parsed from cddid.tbl.gz,
-       which should have already been downloaded by prepare_3rd_party_dbs.sh
+       which should have already been downloaded by prepare_3rd_party_dbs.sh.
+       Saves it in the public domain workspace with a specified ID,
+       and returns a ref to the saved object.
     */
     private static String parseDomainLibrary(String id,
 					     String sourceURL,
 					     String fileName,
+					     String indexName,
 					     String version,
 					     String releaseDate,
 					     String prefix,
@@ -104,13 +168,17 @@ public class DomainModelLibPreparation {
 
 	Map<String,DomainModel> domains;
 	if (source.equals("CDD"))
-	    domains = parseCDDDomains(fileName,
+	    domains = parseCDDDomains(indexName,
 				      prefix);
 	else
-	    domains = parseHMMDomains(fileName);
+	    domains = parseHMMDomains(fileName,
+				      indexName);
 	
 	dl.setDomains(domains);
 	Vector<Handle>libraryFiles = new Vector<Handle>();
+	libraryFiles.add(new Handle()
+			 .withFileName(fileName)
+			 .withShockId(""));
 	dl.setLibraryFiles(libraryFiles);
 
 	return saveDomainLibrary(dl,id);
@@ -148,11 +216,11 @@ public class DomainModelLibPreparation {
 
     /**
        Creates a set of DomainModels from a HMM library.  The info for
-       each DomainModel is parsed from two files: the HMM library itself,
-       and if suffix is set, the "full" file that says what type of
-       domain each is.
+       each DomainModel is parsed from two files: the HMM library itself
+       and (if non-null) the Index file (e.g., Pfam-A.seed)
     */
-    private static Map<String,DomainModel> parseHMMDomains(String fileName) throws Exception {
+    private static Map<String,DomainModel> parseHMMDomains(String fileName,
+							   String indexName) throws Exception {
 	Map<String,DomainModel> domains = new HashMap<String,DomainModel>();
 
 	BufferedReader infile = IO.openReader(fileName);
@@ -185,12 +253,8 @@ public class DomainModelLibPreparation {
 	}
 	infile.close();
 
-	// hack to get Pfam domain types
-	if (fileName.indexOf("Pfam") > -1) {
-	    int pos = fileName.lastIndexOf(".");
-	    fileName = fileName.substring(0,pos)+".full.gz";
-
-	    infile = IO.openReader(fileName);
+	if (indexName != null) {
+	    infile = IO.openReader(indexName);
 	    acc = null;
 	    while (infile.ready()) {
 		String buffer = infile.readLine();
@@ -210,7 +274,7 @@ public class DomainModelLibPreparation {
 
 	return domains;
     }
-    
+
     /**
        saves a DomainLibrary in the public domain workspace, under
        a given ID.  Returns ref to the object.
@@ -225,6 +289,32 @@ public class DomainModelLibPreparation {
 						      .withType(domainLibraryType)
 						      .withName(id)
 						      .withData(new UObject(dl))))).get(0));
+
+	return dlRef;
+    }
+
+    /**
+       gets a DomainLibrary from the public domain workspace
+    */
+    private static DomainLibrary loadDomainLibrary(String id) throws Exception {
+	WorkspaceClient wc = createWsClient(getDevToken());
+	return wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(domainWsName+"/"+id))).get(0).getData().asClassInstance(DomainLibrary.class);
+    }
+    
+    /**
+       saves a DomainModelSet in the public domain workspace, under
+       a given ID.  Returns ref to the object.
+    */
+    private static String saveDomainModelSet(DomainModelSet dms,
+					     String id) throws Exception {
+	WorkspaceClient wc = createWsClient(getDevToken());
+	String dlRef =
+	    getRefFromObjectInfo(wc.saveObjects(new SaveObjectsParams()
+			   .withWorkspace(domainWsName)
+			   .withObjects(Arrays.asList(new ObjectSaveData()
+						      .withType(domainModelSetType)
+						      .withName(id)
+						      .withData(new UObject(dms))))).get(0));
 
 	return dlRef;
     }

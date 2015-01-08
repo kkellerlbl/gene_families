@@ -11,13 +11,12 @@ import us.kbase.workspace.SaveObjectsParams;
 import us.kbase.workspace.SubObjectIdentity;
 
 public interface ObjectStorage {
-
-	public List<ObjectData> getObjects(String authToken, List<ObjectIdentity> objectIds) throws Exception;
+    public List<ObjectData> getObjects(String authToken, List<ObjectIdentity> objectIds) throws Exception;
     
     public List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>>> saveObjects(
     		String authToken, SaveObjectsParams params) throws Exception;
 
-	public List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> listObjects(
+    public List<Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String, String>>> listObjects(
 			String authToken, ListObjectsParams params) throws Exception;
 
     public List<ObjectData> getObjectSubset(String authToken, List<SubObjectIdentity> objectIds) throws Exception;

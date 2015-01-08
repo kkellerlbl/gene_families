@@ -29,8 +29,8 @@ public class EColiTest {
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation-1.0";
     private static final String ecoliRef = genomeWsName+"/kb|g.0";
-    private static final String dlRef = domainWsName+"/COGs-CDD-3.12";
-    private static final String dmsRef = domainWsName+"/COGs-only";
+    private static final String smartRef = domainWsName+"/SMART-only";
+    private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
     /**
        check that we can read E coli genome from WS or file;
@@ -64,119 +64,67 @@ public class EColiTest {
     }
 
     /**
-       Make a DomainModelSet for COGs
+       Check that we can get the SMART-only DomainModelSet from the
+       public workspace.
     */
-    // @Test
-    public void getCOGs() throws Exception {
-	ObjectMapper mapper = new ObjectMapper();
-
-	DomainModelSet dms = new DomainModelSet().withSetName("COGs-only");
-
-	DomainLibrary dl = new DomainLibrary()
-	    .withId("COGs-CDD-3.12")
-	    .withSource("CDD")
-	    .withSourceUrl("ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/")
-	    .withVersion("3.12")
-	    .withReleaseDate("2014-10-03")
-	    .withProgram("rpsblast-2.2.30")
-	    .withDomainPrefix("COG")
-	    .withDbxrefPrefix("http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=")
-	    .withLibraryFiles(null);
-
-	Map<String,DomainModel> domains = new HashMap<String,DomainModel>();
-	Map<String,String> accessionToDescription = new HashMap<String,String>();
-
-	BufferedReader infile = IO.openReader("/kb/dev_container/modules/gene_families/data/db/cddid.tbl.gz");
-	String buffer;
-	while ((buffer=infile.readLine()) != null) {
-	    StringTokenizer st = new StringTokenizer(buffer,"\t");
-	    DomainModel m = new DomainModel();
-	    m.setCddId(st.nextToken());
-	    String accession = st.nextToken();
-	    m.setAccession(accession);
-	    m.setName(st.nextToken());
-	    String description = st.nextToken();
-	    m.setDescription(description);
-	    m.setLength(StringUtil.atol(st.nextToken()));
-	    m.setModelType("PSSM");
-	    if (accession.startsWith("COG")) {
-		domains.put(accession,m);
-		accessionToDescription.put(accession,description);
-	    }
-	}
-
-	dl.setDomains(domains);
-	dms.setDomainAccessionToDescription(accessionToDescription);
-	Vector<Handle>libraryFiles = new Vector<Handle>();
-	dl.setLibraryFiles(libraryFiles);
-
-	Map<String,String> domainPrefix = new HashMap<String,String>();
-	domainPrefix.put("COG","http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=");
-	dms.setDomainPrefixToDbxrefUrl(domainPrefix);
-
-	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-CDD-3.12.json");
-	// mapper.writeValue(f,dl);
-	// f = new File("/kb/dev_container/modules/gene_families/data/tmp/COGs-only.json");
-	// mapper.writeValue(f,dms);
-
-	// save to ws instead of filesystem
+    @Test
+    public void getSMART() throws Exception {
 	WorkspaceClient wc = createWsClient(getDevToken());
-	String dlRef =
-	    getRefFromObjectInfo(wc.saveObjects(new SaveObjectsParams()
-			   .withWorkspace(domainWsName)
-			   .withObjects(Arrays.asList(new ObjectSaveData()
-						      .withType(domainLibraryType)
-						      .withName("COGs-CDD-3.12")
-						      .withData(new UObject(dl))))).get(0));
+	DomainModelSet smart = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(smartRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+
+	assertEquals(smart.getSetName(),"SMART-only");
+    }
+
+    /**
+       Check that we can annotate E. coli with SMART
+    @Test
+    */
+	public void searchEColiPSSM() throws Exception {
+
+	AuthToken token = getDevToken();
+	WorkspaceClient wc = createWsClient(token);
+
+	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+
+	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	Map<String,String> domainLibs = new HashMap<String,String>();
-	domainLibs.put("COG",dlRef);
-	dms.setDomainLibs(domainLibs);
-	
+	DomainAnnotation results = dst.runDomainSearch(token.toString(),
+						       smartRef,
+						       ecoliRef);
+
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
-						  .withType(domainModelSetType)
-						  .withName("COGs-only")
-						  .withData(new UObject(dms)))));
+						  .withType(domainAnnotationType)
+						  .withName("SMART-g.0-2")
+						  .withData(new UObject(results)))));
+	*/
     }
 
+    /**
+       Check that we can annotate E. coli with TIGRFAMs
+    */
     @Test
-	public void searchEColi() throws Exception {
+	public void searchEColiHMM() throws Exception {
 
-	WorkspaceClient wc = createWsClient(getDevToken());
-	DomainLibrary dl =
-	    wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(dlRef))).get(0).getData().asClassInstance(DomainLibrary.class);
-	    
-	DomainModelSet dms = 
-	    wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(dmsRef))).get(0).getData().asClassInstance(DomainModelSet.class);
+	AuthToken token = getDevToken();
+	WorkspaceClient wc = createWsClient(token);
+
+	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+
+	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
 	
-	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), null);
-	Map<String,Tuple2<String,String>> modelNameToRefConsensus = new HashMap<String,Tuple2<String,String>>();
-
-	Map<String,DomainModel> domains = dl.getDomains();
-	for (String accession : domains.keySet()) {
-	    DomainModel m = domains.get(accession);
-	    Tuple2<String,String>domainModelRefConsensus =
-		new Tuple2<String,String>();
-	    domainModelRefConsensus.setE1(accession);
-	    domainModelRefConsensus.setE2(new String("TEST"));
-	    modelNameToRefConsensus.put(accession, domainModelRefConsensus);
-	}
-
-	Genome genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(ecoliRef))).get(0).getData().asClassInstance(Genome.class);
-
-	Tuple2<DomainAnnotation, DomainAlignments> results = dst.runDomainSearch(genome,ecoliRef,new File("/kb/dev_container/modules/gene_families/data/db/Cog"),modelNameToRefConsensus);
-
-	// f = new File("/kb/dev_container/modules/gene_families/data/tmp/DomainAnnotation-g.0.json");
-	// mapper.writeValue(f,results.getE1());
+	DomainAnnotation results = dst.runDomainSearch(token.toString(),
+						       tigrRef,
+						       ecoliRef);
 
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("COGs-g.0")
-						  .withData(new UObject(results.getE1())))));
+						  .withName("TIGR-g.0")
+						  .withData(new UObject(results)))));
     }
 
     /**
