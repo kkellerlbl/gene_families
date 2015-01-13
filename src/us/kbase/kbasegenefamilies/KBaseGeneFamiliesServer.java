@@ -157,38 +157,6 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
         return returnVal;
     }
 
-    /**
-     * <p>Original spec-file function name: construct_domain_clusters</p>
-     * <pre>
-     * </pre>
-     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.ConstructDomainClustersParams ConstructDomainClustersParams}
-     * @return   parameter "job_id" of String
-     */
-    @JsonServerMethod(rpc = "KBaseGeneFamilies.construct_domain_clusters")
-    public String constructDomainClusters(ConstructDomainClustersParams params, AuthToken authPart) throws Exception {
-        String returnVal = null;
-        //BEGIN construct_domain_clusters
-        returnVal = getTaskQueue().addTask(params, authPart.toString());
-        //END construct_domain_clusters
-        return returnVal;
-    }
-
-    /**
-     * <p>Original spec-file function name: search_domains_and_construct_clusters</p>
-     * <pre>
-     * </pre>
-     * @param   params   instance of type {@link us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams SearchDomainsAndConstructClustersParams}
-     * @return   parameter "job_id" of String
-     */
-    @JsonServerMethod(rpc = "KBaseGeneFamilies.search_domains_and_construct_clusters")
-    public String searchDomainsAndConstructClusters(SearchDomainsAndConstructClustersParams params, AuthToken authPart) throws Exception {
-        String returnVal = null;
-        //BEGIN search_domains_and_construct_clusters
-        returnVal = getTaskQueue().addTask(params, authPart.toString());
-        //END search_domains_and_construct_clusters
-        return returnVal;
-    }
-
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.out.println("Usage: <program> <server_port>");
