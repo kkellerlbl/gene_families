@@ -14,8 +14,10 @@ import us.kbase.common.service.*;
 import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
+import us.kbase.shock.client.*;
 
 public class DomainModelLibPreparation {
+    private static final String shockUrl = "https://kbase.us/services/shock-api/";
     private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
@@ -62,7 +64,7 @@ public class DomainModelLibPreparation {
 			   "2014-09-17",
 			   "TIGR",
 			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
-
+			   
 	String[] libraries = new String[] {"SMART-6.0-CDD-3.12"};
 	
 	makeDomainModelSet("SMART-only",
@@ -76,12 +78,11 @@ public class DomainModelLibPreparation {
 	libraries = new String[] { "COGs-CDD-3.12",
 				   "CDD-NCBI-curated-3.12",
 				   "SMART-6.0-CDD-3.12",
-				   "Pfam-27.0",				   
+				   "Pfam-27.0",
 				   "TIGRFAMs-15.0"};
 	
 	makeDomainModelSet("All",
 			   libraries);
-	
     }
 
     /**
@@ -175,10 +176,45 @@ public class DomainModelLibPreparation {
 				      indexName);
 	
 	dl.setDomains(domains);
+
+	// find all the parsed library files; make sure
+	// the "real" file for passing to blast/hmmer is first
+	File libFile = new File(fileName);
+	fileName = libFile.getName();
+	String libPrefix = new String(fileName);
+	int pos = fileName.indexOf(".");
+	if (pos > 0)
+	    libPrefix = libPrefix.substring(0,pos);
 	Vector<Handle>libraryFiles = new Vector<Handle>();
 	libraryFiles.add(new Handle()
-			 .withFileName(fileName)
-			 .withShockId(""));
+			 .withFileName(fileName));
+	File libDir = libFile.getParentFile();
+	for (File f : libDir.listFiles()) {
+	    if (!f.isFile())
+		continue;
+	    if (!f.getName().startsWith(libPrefix))
+		continue;
+	    if (f.getName().equals(fileName))
+		continue;
+	    
+	    libraryFiles.add(new Handle()
+			     .withFileName(f.getName()));
+	}
+
+	// store them all in Shock
+	AuthToken token = getDevToken();
+	BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
+	for (Handle h : libraryFiles) {
+	    File f = new File(libDir.getPath()+"/"+h.getFileName());
+	    InputStream is = new BufferedInputStream(new FileInputStream(f));
+	    ShockNode sn = client.addNode(is,f.getName(),null);
+	    String shockNodeID = sn.getId().getId();
+	    String user = token.getClientId();
+	    // this makes it world-readable:
+	    client.removeFromNodeAcl(sn.getId(), Arrays.asList(user), new ShockACLType(ShockACLType.READ));
+	    h.setShockId(shockNodeID);
+	}
+	
 	dl.setLibraryFiles(libraryFiles);
 
 	return saveDomainLibrary(dl,id);

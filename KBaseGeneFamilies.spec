@@ -311,7 +311,6 @@ module KBaseGeneFamilies {
 		@optional is_domain_cluster_data_stored_outside
 		@optional domain_cluster_data_id_prefix
 		@optional domain_cluster_data_id_suffix
-	*/
 	typedef structure {
 		list<domain_annotation_ref> genome_annotations;
 		dcsr_ref clusters_for_extension;
@@ -325,6 +324,7 @@ module KBaseGeneFamilies {
 
 	funcdef construct_domain_clusters(ConstructDomainClustersParams params) returns 
 		(string job_id) authentication required;
+	*/
 
 	/*
 		list<genome_ref> genomes - genome list
@@ -357,7 +357,6 @@ module KBaseGeneFamilies {
 		@optional is_domain_cluster_data_stored_outside
 		@optional domain_cluster_data_id_prefix
 		@optional domain_cluster_data_id_suffix
-	*/
 	typedef structure {
 		list<genome_ref> genomes;
 		dcsr_ref clusters_for_extension;
@@ -374,5 +373,6 @@ module KBaseGeneFamilies {
 
 	funcdef search_domains_and_construct_clusters(SearchDomainsAndConstructClustersParams params) 
 		returns (string job_id) authentication required;
+	*/
 
 };

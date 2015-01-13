@@ -2,6 +2,7 @@ package us.kbase.kbasegenefamilies;
 
 import java.io.*;
 import java.util.*;
+import java.net.URL;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -26,6 +27,7 @@ import us.kbase.workspace.ObjectIdentity;
 import org.strbio.IO;
 import org.strbio.io.*;
 import org.strbio.util.*;
+import us.kbase.shock.client.*;
 
 /**
    This class runs a domain search against a single genome, using
@@ -33,6 +35,8 @@ import org.strbio.util.*;
    workspace objects.
 */
 public class DomainSearchTask {
+    private static final String shockUrl = "https://kbase.us/services/shock-api/";
+
     private static String MAX_BLAST_EVALUE = "1e-04";
     private static int MIN_COVERAGE = 50;
     private static final int modelBufferMaxSize = 100;
@@ -111,24 +115,22 @@ public class DomainSearchTask {
 					    DomainLibrary dl) throws Exception {
 						
 	String genomeName = genome.getScientificName();
-	File dbFile = new File(dl.getLibraryFiles().get(0).getFileName());
+	File dbFile = new File(getDomainsDir().getPath()+"/"+dl.getLibraryFiles().get(0).getFileName());
 	File fastaFile = File.createTempFile("proteome", ".fasta", tempDir);
 	File outFile = null;
 
-	final Map<String,Tuple2<String,String>> modelNameToRefConsensus = new HashMap<String,Tuple2<String,String>>();
+	final Map<String,Long> modelNameToLength = new HashMap<String,Long>();
 
-	// note that we don't actually have consensus sequences for
-	// each model, so we're making a dummy object to work with
-	// Roman's legacy code:
+	// save the length of each model, to compute coverage.
+	// This replaces modelNameToRefConsensus in Roman's legacy code:
 	Map<String,DomainModel> libDomains = dl.getDomains();
 	for (String accession : libDomains.keySet()) {
 	    DomainModel m = libDomains.get(accession);
-	    Tuple2<String,String>domainModelRefConsensus =
-		new Tuple2<String,String>();
-	    domainModelRefConsensus.setE1(accession);
-	    domainModelRefConsensus.setE2(new String("TEST"));
-	    modelNameToRefConsensus.put(accession, domainModelRefConsensus);
+	    modelNameToLength.put(accession, m.getLength());
 	}
+
+	// make sure we have local copies of all library files
+	prepareLibraryFiles(dl);
 	
 	try {
 	    final Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contig2prots = 
@@ -200,9 +202,6 @@ public class DomainSearchTask {
 	    // run the appropriate annotation program
 	    String program = dl.getProgram();
 
-	    final Map<String, Map<String, Map<String, String>>> modelToFeatureToStartToAlignment = 
-		new TreeMap<String, Map<String, Map<String, String>>>();
-	    
 	    if (program.equals("rpsblast-2.2.30")) {		
 		outFile = runRpsBlast(dbFile, fastaFile);
 		RpsBlastParser.processRpsOutput(outFile, new RpsBlastParser.RpsBlastCallback() {
@@ -210,28 +209,19 @@ public class DomainSearchTask {
 			    public void next(String query, String subject, int qstart, String qseq,
 					     int sstart, String sseq, String evalue, double bitscore,
 					     double ident) throws Exception {
-			    Tuple2<String,String> domainModelRefConsensus = modelNameToRefConsensus.get(subject);
-			    if (domainModelRefConsensus == null)
+			    Long modelLength = modelNameToLength.get(subject);
+			    if (modelLength == null)
 				throw new IllegalStateException("Unexpected subject name in prs blast result: " + subject);
 			    int featurePos = Integer.parseInt(query);
-			    /*
-			      String consensus = domainModelRefConsensus.getE2();
-			      int alnLen = consensus.length();
-			      String alignedSeq = AlignUtil.removeGapsFromSubject(alnLen, qseq, sstart - 1, sseq);
-			      int coverage = 100 - AlignUtil.getGapPercent(alignedSeq);
-			      if (coverage < MIN_COVERAGE)
-			      return;
-			    */
-			    int coverage = 100;
-			    String alignedSeq = "TEST"; // fake alignments
+			    String alignedSeq = AlignUtil.removeGapsFromSubject((int)(modelLength.longValue()), qseq, sstart - 1, sseq);
+			    int coverage = 100 - AlignUtil.getGapPercent(alignedSeq);
 			    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
 			    long featureIndex = contigIdFeatIndex.getE2();
 			    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
-			    String domainRef = domainModelRefConsensus.getE1();
-			    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(domainRef);
+			    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(subject);
 			    if (places == null) {
 				places = new ArrayList<Tuple5<Long, Long, Double, Double, Double>>();
-				domains.put(domainRef, places);
+				domains.put(subject, places);
 			    }
 			    int qlen = AlignUtil.removeGaps(qseq).length();
 			    places.add(new Tuple5<Long, Long, Double, Double, Double>()
@@ -240,20 +230,6 @@ public class DomainSearchTask {
 				       .withE3(Double.parseDouble(evalue))
 				       .withE4(bitscore)
 				       .withE5(coverage / 100.0));
-			    Map<String, Map<String, String>> featureToStartToAlignment = 
-				modelToFeatureToStartToAlignment.get(domainRef);
-			    if (featureToStartToAlignment == null) {
-				featureToStartToAlignment = new TreeMap<String, Map<String, String>>();
-				modelToFeatureToStartToAlignment.put(domainRef, featureToStartToAlignment);
-			    }
-			    String contigId = contigIdFeatIndex.getE1();
-			    String featureId = contig2prots.get(contigId).get((int)featureIndex).getE1();
-			    Map<String, String> startToAlignment = featureToStartToAlignment.get(featureId);
-			    if (startToAlignment == null) {
-				startToAlignment = new TreeMap<String, String>();
-				featureToStartToAlignment.put(featureId, startToAlignment);
-			    }
-			    startToAlignment.put("" + qstart, alignedSeq);
 			}
 		    });
 	    }
@@ -276,15 +252,15 @@ public class DomainSearchTask {
 			buffer = infile.readLine();
 
 			while (buffer.startsWith(">> ")) {
-			    Tuple2<String,String> domainModelRefConsensus = null;
+			    Long modelLength = null;
+			    String modelName = null;
 			    StringTokenizer st = new StringTokenizer(buffer);
 			    try {
 				st.nextToken();
-				String modelName = st.nextToken();
-				// System.out.println("model: "+modelName);
+				modelName = st.nextToken();
 
-				domainModelRefConsensus = modelNameToRefConsensus.get(modelName);
-				if (domainModelRefConsensus == null)
+				modelLength = modelNameToLength.get(modelName);
+				if (modelLength == null)
 				    throw new IllegalStateException("No recognized domain in HMMER output line '"+buffer+"'");
 			    }
 			    catch (NoSuchElementException e) {
@@ -305,65 +281,35 @@ public class DomainSearchTask {
 				    st.nextToken(); // c-evalue
 
 				    String eString = st.nextToken();  // i-evalue
-				    double log10E = 0.0;
-				    
-				    int expos = eString.indexOf("e-");
-				    if (expos==-1) {
-					double e = StringUtil.atod(eString);
-					if (e==0.0)
-					    log10E = -9999.0;
-					else {
-					    log10E = Math.log(e)/Math.log(10.0);
-					}
-				    }
-				    else {
-					log10E = (double)StringUtil.atoi(eString, expos+1);
-					double coef = StringUtil.atod(eString,0,expos);
-					if (coef > 0.0) {
-					    log10E += Math.log(coef)/Math.log(10.0);
-					}
-				    }
-
-				    int hStart = StringUtil.atoi(st.nextToken()) - 1;
-				    int hLength = StringUtil.atoi(st.nextToken()) - hStart;
+				    // these numbers are 1-offset, for
+				    // compatibility with RPS-BLAST parsing code:
+				    int hStart = StringUtil.atoi(st.nextToken());
+				    int hLength = StringUtil.atoi(st.nextToken()) - hStart + 1;
 
 				    st.nextToken(); // bounds
 
-				    int start = StringUtil.atoi(st.nextToken()) - 1;
-				    int l = StringUtil.atoi(st.nextToken()) - start;
+				    // these numbers are 1-offset, for
+				    // compatibility with RPS-BLAST parsing code:
+				    int start = StringUtil.atoi(st.nextToken());
+				    int l = StringUtil.atoi(st.nextToken()) - start + 1;
 
 				    // save this hit
-				    int coverage = 100;
+				    double coverage = (double)hLength / (double)modelLength;
 				    String alignedSeq = "TEST"; // fake alignments
 				    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
 				    long featureIndex = contigIdFeatIndex.getE2();
 				    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
-				    String domainRef = domainModelRefConsensus.getE1();
-				    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(domainRef);
+				    List<Tuple5<Long, Long, Double, Double, Double>> places = domains.get(modelName);
 				    if (places == null) {
 					places = new ArrayList<Tuple5<Long, Long, Double, Double, Double>>();
-					domains.put(domainRef, places);
+					domains.put(modelName, places);
 				    }
 				    places.add(new Tuple5<Long, Long, Double, Double, Double>()
 					       .withE1((long)start)
 					       .withE2((long)start + l - 1)
-					       .withE3(log10E)
+					       .withE3(Double.parseDouble(eString))
 					       .withE4(score)
-					       .withE5(coverage / 100.0));
-				    Map<String, Map<String, String>> featureToStartToAlignment = 
-					modelToFeatureToStartToAlignment.get(domainRef);
-				    if (featureToStartToAlignment == null) {
-					featureToStartToAlignment = new TreeMap<String, Map<String, String>>();
-					modelToFeatureToStartToAlignment.put(domainRef, featureToStartToAlignment);
-				    }
-				    String contigId = contigIdFeatIndex.getE1();
-				    String featureId = contig2prots.get(contigId).get((int)featureIndex).getE1();
-				    Map<String, String> startToAlignment = featureToStartToAlignment.get(featureId);
-				    if (startToAlignment == null) {
-					startToAlignment = new TreeMap<String, String>();
-					featureToStartToAlignment.put(featureId, startToAlignment);
-				    }
-				    startToAlignment.put("" + start, alignedSeq);
+					       .withE5(coverage));
 				}
 				catch (NoSuchElementException e) {
 				    throw new Exception("Format error in HMMER output line '"+buffer+"'");
@@ -385,11 +331,9 @@ public class DomainSearchTask {
 	    return rv;
 	}
 	finally {
-	    /*
 	    try { fastaFile.delete(); } catch (Exception ignore) {}
 	    if (outFile != null)
 		try { outFile.delete(); } catch (Exception ignore) {}
-	    */
 	}
     }
 
@@ -444,22 +388,6 @@ public class DomainSearchTask {
      */
 
     /**
-       prepares a single RPS-BLAST model.  Not used by current code,
-       which requires a pre-formatted library.
-    private void prepareModel(String modelRef, DomainModel model, List<File> smpFiles,
-			      Map<String,String> modelRefToNameRet, Map<String,Tuple2<String,String>> modelNameToRefConsensus) {
-	if (modelRefToNameRet.containsKey(modelRef))
-	    return;
-	smpFiles.add(getDomainModelSmpFile(modelRef));
-	modelRefToNameRet.put(modelRef, model.getDomainName());
-	if (modelNameToRefConsensus != null)
-	    modelNameToRefConsensus.put(model.getDomainName(), 
-					new Tuple2<String,String>().withE1(modelRef).withE2(model.getCddConsensusSeq()));
-    }
-    */
-
-    
-    /**
        Gets a reference to the object, from object info returned by
        the workspace client
     */
@@ -496,20 +424,8 @@ public class DomainSearchTask {
     }
     */
 	
-    private File getDomainModelJsonFile(String modelRef) {
-	return new File(getDomainsDir(), "model_" + modelRef.replace('/', '_') + ".json");
-    }
-
-    private File getDomainModelSmpFile(String modelRef) {
-	return new File(getDomainsDir(), "model_" + modelRef.replace('/', '_') + ".smp");
-    }
-
-    private File getDomainModelSetJsonFile(String modelSetRef) {
-	return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".json");
-    }
-
     public File getBinDir() {
-	File ret = new File("/kb/dev_container/modules/gene_families/data/bin");
+	File ret = new File(tempDir, "bin");
 	if (!ret.exists())
 	    ret.mkdir();
 	return ret;
@@ -520,6 +436,19 @@ public class DomainSearchTask {
 	if (!ret.exists())
 	    ret.mkdir();
 	return ret;
+    }
+
+    private void prepareLibraryFiles(DomainLibrary dl) throws Exception {
+	BasicShockClient client = new BasicShockClient(new URL(shockUrl));
+	File dir = getDomainsDir();
+	for (Handle h : dl.getLibraryFiles()) {
+	    File f = new File(dir.getPath()+"/"+h.getFileName());
+	    if (f.canRead())
+		continue;
+	    OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
+	    client.getFile(new ShockNodeId(h.getShockId()),os);
+	    os.close();
+	}
     }
 
     private File getFormatRpsDbBin() throws Exception {

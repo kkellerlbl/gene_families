@@ -31,6 +31,7 @@ public class EColiTest {
     private static final String ecoliRef = genomeWsName+"/kb|g.0";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
+    private static final String allLibsRef = domainWsName+"/All";
 
     /**
        check that we can read E coli genome from WS or file;
@@ -76,9 +77,10 @@ public class EColiTest {
     }
 
     /**
-       Check that we can annotate E. coli with SMART
-    @Test
+       Check that we can annotate E. coli with SMART.  This is
+       fairly fast.
     */
+    @Test
 	public void searchEColiPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -103,7 +105,8 @@ public class EColiTest {
     }
 
     /**
-       Check that we can annotate E. coli with TIGRFAMs
+       Check that we can annotate E. coli with TIGRFAMs.  Takes ~12 min
+       on a 2-CPU Magellan instance.
     */
     @Test
 	public void searchEColiHMM() throws Exception {
@@ -124,6 +127,32 @@ public class EColiTest {
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withName("TIGR-g.0")
+						  .withData(new UObject(results)))));
+    }
+
+    /**
+       Check that we can annotate E. coli with all domain libraries.
+       Takes ~65 min on a 2-CPU Magellan instance.
+    */
+    @Test
+	public void searchEColiAll() throws Exception {
+
+	AuthToken token = getDevToken();
+	WorkspaceClient wc = createWsClient(token);
+
+	ObjectStorage storage = SearchDomainsBuilder.createDefaultObjectStorage(wc);
+
+	DomainSearchTask dst = new DomainSearchTask(new File("/kb/dev_container/modules/gene_families/data/tmp"), storage);
+	
+	DomainAnnotation results = dst.runDomainSearch(token.toString(),
+						       allLibsRef,
+						       ecoliRef);
+
+	wc.saveObjects(new SaveObjectsParams()
+		       .withWorkspace(domainWsName)
+		       .withObjects(Arrays.asList(new ObjectSaveData()
+						  .withType(domainAnnotationType)
+						  .withName("Alldomains-g.0")
 						  .withData(new UObject(results)))));
     }
 
