@@ -64,7 +64,7 @@ public class DomainModelLibPreparation {
 			   "2014-09-17",
 			   "TIGR",
 			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
-
+			   
 	String[] libraries = new String[] {"SMART-6.0-CDD-3.12"};
 	
 	makeDomainModelSet("SMART-only",
@@ -202,12 +202,16 @@ public class DomainModelLibPreparation {
 	}
 
 	// store them all in Shock
-	BasicShockClient client = new BasicShockClient(new URL(shockUrl), getDevToken());
+	AuthToken token = getDevToken();
+	BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
 	for (Handle h : libraryFiles) {
 	    File f = new File(libDir.getPath()+"/"+h.getFileName());
 	    InputStream is = new BufferedInputStream(new FileInputStream(f));
 	    ShockNode sn = client.addNode(is,f.getName(),null);
 	    String shockNodeID = sn.getId().getId();
+	    String user = token.getClientId();
+	    // this makes it world-readable:
+	    client.removeFromNodeAcl(sn.getId(), Arrays.asList(user), new ShockACLType(ShockACLType.READ));
 	    h.setShockId(shockNodeID);
 	}
 	

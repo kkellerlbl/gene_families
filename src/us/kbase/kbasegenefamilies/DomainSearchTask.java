@@ -2,6 +2,7 @@ package us.kbase.kbasegenefamilies;
 
 import java.io.*;
 import java.util.*;
+import java.net.URL;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -26,6 +27,7 @@ import us.kbase.workspace.ObjectIdentity;
 import org.strbio.IO;
 import org.strbio.io.*;
 import org.strbio.util.*;
+import us.kbase.shock.client.*;
 
 /**
    This class runs a domain search against a single genome, using
@@ -33,6 +35,8 @@ import org.strbio.util.*;
    workspace objects.
 */
 public class DomainSearchTask {
+    private static final String shockUrl = "https://kbase.us/services/shock-api/";
+
     private static String MAX_BLAST_EVALUE = "1e-04";
     private static int MIN_COVERAGE = 50;
     private static final int modelBufferMaxSize = 100;
@@ -111,7 +115,7 @@ public class DomainSearchTask {
 					    DomainLibrary dl) throws Exception {
 						
 	String genomeName = genome.getScientificName();
-	File dbFile = new File(dl.getLibraryFiles().get(0).getFileName());
+	File dbFile = new File(getDomainsDir().getPath()+"/"+dl.getLibraryFiles().get(0).getFileName());
 	File fastaFile = File.createTempFile("proteome", ".fasta", tempDir);
 	File outFile = null;
 
@@ -124,6 +128,9 @@ public class DomainSearchTask {
 	    DomainModel m = libDomains.get(accession);
 	    modelNameToLength.put(accession, m.getLength());
 	}
+
+	// make sure we have local copies of all library files
+	prepareLibraryFiles(dl);
 	
 	try {
 	    final Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> contig2prots = 
@@ -417,18 +424,6 @@ public class DomainSearchTask {
     }
     */
 	
-    private File getDomainModelJsonFile(String modelRef) {
-	return new File(getDomainsDir(), "model_" + modelRef.replace('/', '_') + ".json");
-    }
-
-    private File getDomainModelSmpFile(String modelRef) {
-	return new File(getDomainsDir(), "model_" + modelRef.replace('/', '_') + ".smp");
-    }
-
-    private File getDomainModelSetJsonFile(String modelSetRef) {
-	return new File(getDomainsDir(), "modelset_" + modelSetRef.replace('/', '_') + ".json");
-    }
-
     public File getBinDir() {
 	File ret = new File(tempDir, "bin");
 	if (!ret.exists())
@@ -441,6 +436,19 @@ public class DomainSearchTask {
 	if (!ret.exists())
 	    ret.mkdir();
 	return ret;
+    }
+
+    private void prepareLibraryFiles(DomainLibrary dl) throws Exception {
+	BasicShockClient client = new BasicShockClient(new URL(shockUrl));
+	File dir = getDomainsDir();
+	for (Handle h : dl.getLibraryFiles()) {
+	    File f = new File(dir.getPath()+"/"+h.getFileName());
+	    if (f.canRead())
+		continue;
+	    OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
+	    client.getFile(new ShockNodeId(h.getShockId()),os);
+	    os.close();
+	}
     }
 
     private File getFormatRpsDbBin() throws Exception {
