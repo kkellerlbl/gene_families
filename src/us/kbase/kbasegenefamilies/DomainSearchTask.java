@@ -324,11 +324,9 @@ public class DomainSearchTask {
 	    return rv;
 	}
 	finally {
-	    /*
 	    try { fastaFile.delete(); } catch (Exception ignore) {}
 	    if (outFile != null)
 		try { outFile.delete(); } catch (Exception ignore) {}
-	    */
 	}
     }
 
@@ -432,7 +430,7 @@ public class DomainSearchTask {
     }
 
     public File getBinDir() {
-	File ret = new File("/kb/dev_container/modules/gene_families/data/bin");
+	File ret = new File(tempDir, "bin");
 	if (!ret.exists())
 	    ret.mkdir();
 	return ret;

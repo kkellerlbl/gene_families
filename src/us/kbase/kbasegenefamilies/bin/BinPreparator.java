@@ -12,11 +12,27 @@ import us.kbase.common.utils.CorrectProcess;
 
 public class BinPreparator {
     public static File prepareBin(File dir, String programName) throws Exception {
+	File ret = new File(dir, programName);
+	if (ret.exists())
+	    return ret;
 	String suffix = getOsSuffix();
-	File ret = new File(dir, programName + "." + suffix);
+	OutputStream os = new FileOutputStream(ret);
+	InputStream is = BinPreparator.class.getResourceAsStream("/" + programName + "." + suffix);
+	try {
+	    IOUtils.copy(is, os);
+	}
+	catch (IOException ex) {
+	    try { os.close(); } catch (Exception ignore) {}
+	    try { if (ret.exists()) ret.delete(); } catch (Exception ignore) {}
+	}
+	finally {
+	    try { os.close(); } catch (Exception ignore) {}
+	    try { is.close(); } catch (Exception ignore) {}
+	}
+	new CorrectProcess(Runtime.getRuntime().exec(CorrectProcess.arr("chmod", "a+x", ret.getAbsolutePath()))).waitFor();
 	return ret;
     }
-
+    
     private static String getOsSuffix() {
 	String osName = System.getProperty("os.name").toLowerCase();
 	String suffix;
