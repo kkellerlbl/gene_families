@@ -28,15 +28,15 @@ public class ClientTest {
     private static final String genomeWsName = "KBasePublicGenomesV4";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String privateWsName = "jmc:gene_domains_test";
-    private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation-1.0";
+    private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
     private static final String dvID = "kb|g.3562";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String allLibsRef = domainWsName+"/All";
 
     /**
        check that we can read DvH genome from private WS
-    */
-    @Test public void getDV() throws Exception {
+    @Test
+    */public void getDV() throws Exception {
 	Genome genome = null;
 	
 	WorkspaceClient wc = createWsClient(getDevToken());
@@ -60,8 +60,8 @@ public class ClientTest {
     /**
        Check that we can annotate DvH with SMART.  This is
        fairly fast.
-    */
     @Test
+    */
     public void searchDVPSSM() throws Exception {
 
 	AuthToken token = getDevToken();

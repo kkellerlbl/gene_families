@@ -25,9 +25,9 @@ public class EColiTest {
     private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String genomeWsName = "KBasePublicGenomesV4";
     private static final String domainWsName = "KBasePublicGeneDomains";
-    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
-    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
-    private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation-1.0";
+    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary";
+    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
+    private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
     private static final String ecoliRef = genomeWsName+"/kb|g.0";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
@@ -122,12 +122,14 @@ public class EColiTest {
 						       tigrRef,
 						       ecoliRef);
 
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withName("TIGR-g.0")
 						  .withData(new UObject(results)))));
+	*/
     }
 
     /**
