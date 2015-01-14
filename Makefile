@@ -107,7 +107,7 @@ deploy-scripts:
 	@echo "No deployment for scripts"
 
 deploy-docs:
-	$(ANT) docs
+	$(ANT) javadoc
 	rsync -a ./docs $(SERVICE_DIR)
 
 clean:
