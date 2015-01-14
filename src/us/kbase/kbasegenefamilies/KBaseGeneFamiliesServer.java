@@ -50,7 +50,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static final String CFG_PROP_TEMP_DIR = "scratch";
     public static final String CFG_PROP_DATA_DIR = "data.dir";
     
-    public static final String SERVICE_VERSION = "1.0";
+    public static final String SERVICE_VERSION = "1.0.0";
     public static final String SERVICE_DEPLOYMENT_NAME = "gene_families";
     public static final String SERVICE_REGISTERED_NAME = "KBaseGeneFamilies";
 
@@ -153,6 +153,22 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
         //BEGIN search_domains
         returnVal = getTaskQueue().addTask(params, authPart.toString());
         //END search_domains
+        return returnVal;
+    }
+
+    /**
+     * <p>Original spec-file function name: version</p>
+     * <pre>
+     * returns version number of service
+     * </pre>
+     * @return   parameter "version" of String
+     */
+    @JsonServerMethod(rpc = "KBaseGeneFamilies.version")
+    public String version() throws Exception {
+        String returnVal = null;
+        //BEGIN version
+	returnVal = SERVICE_VERSION;
+        //END version
         return returnVal;
     }
 
