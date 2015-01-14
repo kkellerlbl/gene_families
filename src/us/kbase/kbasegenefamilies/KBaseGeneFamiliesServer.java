@@ -38,8 +38,7 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     private static TaskQueue taskHolder = null;
     private static TaskQueueConfig taskConfig = null;
     
-	private static final String defaultWsUrl = "http://dev04.berkeley.kbase.us:7058";
-	//private static final String defaultWsUrl = "https://kbase.us/services/ws/";
+    private static final String defaultWsUrl = "https://kbase.us/services/ws/";
     private static final String defaultUjsUrl = "https://kbase.us/services/userandjobstate/";
     
     public static final String SYS_PROP_KB_DEPLOYMENT_CONFIG = "KB_DEPLOYMENT_CONFIG";
