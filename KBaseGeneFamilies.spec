@@ -101,23 +101,28 @@ module KBaseGeneFamilies {
 
 	/* 
 		@id ws KBaseGeneFamilies.DomainCluster
-	*/
 	typedef string domain_cluster_ref;
+	*/
 
 	typedef tuple<int start_in_feature,int stop_in_feature,float evalue,
 		float bitscore, float domain_coverage> domain_place;
 
+/*
 	typedef tuple<string contig_id,string feature_id,int feature_index,
 		list<domain_place>> domain_cluster_element;
+*/
 
-	/* @id ws KBaseTrees.MSA */
+	/* @id ws KBaseTrees.MSA
 	typedef string ws_alignment_id;
+ */
 
-	/* @id ws KBaseTrees.MSASet */
+	/* @id ws KBaseTrees.MSASet
 	typedef string msa_set_ref;
+ */
 
-	/* @id ws KBaseTrees.Tree */
+	/* @id ws KBaseTrees.Tree
 	typedef string ws_tree_id;
+ */
 
 	/*
 		domain_accession model - reference to domain model
@@ -134,13 +139,13 @@ module KBaseGeneFamilies {
 			DomainClusterSearchResult object instead.
 		@optional parent_ref
 		@optional msa_ref
-	*/
 	typedef structure {
 		domain_accession model;
 		domain_cluster_ref parent_ref;
 		mapping<genome_ref,list<domain_cluster_element>> data;
 		ws_alignment_id msa_ref;
 	} DomainCluster;
+	*/
 
 	typedef tuple<string feature_id,int feature_start,int feature_stop,int feature_dir,
 		mapping<domain_accession,list<domain_place>>> annotation_element;
@@ -183,12 +188,12 @@ module KBaseGeneFamilies {
 			mapping from start position of alignment in feature sequence to aligned sequence of 
 			domain occurrence (mapping<domain_accession, mapping<string feature_id,
 				mapping<string start_in_feature, string alignment_with_profile>>>).
-	*/
 	typedef structure {
 		genome_ref genome_ref;
 		mapping<domain_accession,mapping<string feature_id,
 			mapping<string start_in_feature,string alignment_with_profile>>> alignments; 
 	} DomainAlignments;
+	*/
 
 	/* 
 		@id ws KBaseGeneFamilies.DomainAnnotation
@@ -197,12 +202,11 @@ module KBaseGeneFamilies {
 
 	/* 
 		@id ws KBaseGeneFamilies.DomainClusterSearchResult
-	*/
 	typedef string dcsr_ref;
+	*/
 
 	/*
-		Aggreagated data for every genome.
-	*/
+		Aggregated data for every genome.
 	typedef structure {
 		genome_ref genome_ref;
 		string kbase_id;
@@ -212,10 +216,10 @@ module KBaseGeneFamilies {
 		int domain_models;
 		int domains;
 	} GenomeStat;
+	*/
 
 	/*
 		Aggregated data for every domain cluster.
-	*/
 	typedef structure {
 		domain_accession domain_accession;
 		string name;
@@ -223,6 +227,7 @@ module KBaseGeneFamilies {
 		int features;
 		int domains;
 	} DomainClusterStat;	
+	*/
 
 	/*
 		dcsr_ref parent_ref - optional reference to parent domain clusters search results
@@ -257,7 +262,6 @@ module KBaseGeneFamilies {
 		@optional msa_refs
 		@optional trees
 		@optional tree_refs
-	*/
 	typedef structure {
 		dcsr_ref parent_ref;
 		dms_ref used_dms_ref;
@@ -273,6 +277,7 @@ module KBaseGeneFamilies {
 		mapping<domain_accession, KBaseTrees.Tree> trees;
 		mapping<domain_accession, ws_tree_id> tree_refs;
 	} DomainClusterSearchResult;
+	*/
 
 	/*
 		genome_ref genome - genome for domain annotation process
