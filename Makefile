@@ -85,7 +85,7 @@ deploy-service:	prepare-deploy-target
 	cp -f ./service/glassfish_administer_service.py $(SERVICE_DIR)
 	cp -f ./deploy.cfg $(SERVICE_DIR)
 	echo '#!/bin/sh' > $(SERVICE_DIR)/start_service
-	echo "export KB_DEPLOYMENT_CONFIG=$(SERVICE_DIR)/deploy.cfg" >> $(SERVICE_DIR)/start_service
+	echo "export KB_DEPLOYMENT_CONFIG=$$KB_TOP/deployment.cfg" >> $(SERVICE_DIR)/start_service
 	echo "$(SERVICE_DIR)/glassfish_administer_service.py --admin $(ASADMIN)\
 	 --domain $(SERVICE_NAME) --domain-dir $(SERVICE_DIR)/glassfish_domain\
 	 --war $(SERVICE_DIR)/KBaseGeneFamilies.war --port $(SERVICE_PORT)\
