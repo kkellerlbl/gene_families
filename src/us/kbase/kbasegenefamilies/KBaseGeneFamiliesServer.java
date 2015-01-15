@@ -56,47 +56,47 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
 
     public static synchronized TaskQueueConfig getTaskConfig() throws Exception {
     	if (taskConfig == null) {
-    		int threadCount = 1;
-    		File queueDbDir = new File(".");
-    		String wsUrl = defaultWsUrl;
-    		String ujsUrl = defaultUjsUrl;
+	    int threadCount = 1;
+	    File queueDbDir = new File(".");
+	    String wsUrl = defaultWsUrl;
+	    String ujsUrl = defaultUjsUrl;
     		
-    		Map<String, String> allConfigProps = loadConfig();
-    		if (allConfigProps.containsKey(CFG_PROP_THREAD_COUNT))
-    			threadCount = Integer.parseInt(allConfigProps.get(CFG_PROP_THREAD_COUNT));
-    		if (allConfigProps.containsKey(CFG_PROP_QUEUE_DB_DIR))
-    			queueDbDir = new File(allConfigProps.get(CFG_PROP_QUEUE_DB_DIR));
-    		if (allConfigProps.containsKey(CFG_PROP_WS_SRV_URL))
-    			wsUrl = allConfigProps.get(CFG_PROP_WS_SRV_URL);
-    		if (allConfigProps.containsKey(CFG_PROP_JSS_SRV_URL))
-    			ujsUrl = allConfigProps.get(CFG_PROP_JSS_SRV_URL);
-    		for (Object key : allConfigProps.keySet())
-    			allConfigProps.put(key.toString(), allConfigProps.get(key.toString()));
-    		final String finalWsUrl = wsUrl;
-    		final String finalUjsUrl = ujsUrl;
-    		JobStatuses jobStatuses = new JobStatuses() {
-				@Override
-				public String createAndStartJob(String token, String status, String desc,
-						String initProgressPtype, String estComplete) throws Exception {
-    				return createJobClient(finalUjsUrl, token).createAndStartJob(token, status, desc, 
-    						new InitProgress().withPtype(initProgressPtype), estComplete);
-				}
-				@Override
-				public void updateJob(String job, String token, String status,
-						String estComplete) throws Exception {
-    				createJobClient(finalUjsUrl, token).updateJob(job, token, status, estComplete);
-				}
-				@Override
-				public void completeJob(String job, String token, String status,
+	    Map<String, String> allConfigProps = loadConfig();
+	    if (allConfigProps.containsKey(CFG_PROP_THREAD_COUNT))
+		threadCount = Integer.parseInt(allConfigProps.get(CFG_PROP_THREAD_COUNT));
+	    if (allConfigProps.containsKey(CFG_PROP_QUEUE_DB_DIR))
+		queueDbDir = new File(allConfigProps.get(CFG_PROP_QUEUE_DB_DIR));
+	    if (allConfigProps.containsKey(CFG_PROP_WS_SRV_URL))
+		wsUrl = allConfigProps.get(CFG_PROP_WS_SRV_URL);
+	    if (allConfigProps.containsKey(CFG_PROP_JSS_SRV_URL))
+		ujsUrl = allConfigProps.get(CFG_PROP_JSS_SRV_URL);
+	    for (Object key : allConfigProps.keySet())
+		allConfigProps.put(key.toString(), allConfigProps.get(key.toString()));
+	    final String finalWsUrl = wsUrl;
+	    final String finalUjsUrl = ujsUrl;
+	    JobStatuses jobStatuses = new JobStatuses() {
+		    @Override
+			public String createAndStartJob(String token, String status, String desc,
+							String initProgressPtype, String estComplete) throws Exception {
+			return createJobClient(finalUjsUrl, token).createAndStartJob(token, status, desc, 
+										     new InitProgress().withPtype(initProgressPtype), estComplete);
+		    }
+		    @Override
+			public void updateJob(String job, String token, String status,
+					      String estComplete) throws Exception {
+			createJobClient(finalUjsUrl, token).updateJob(job, token, status, estComplete);
+		    }
+		    @Override
+			public void completeJob(String job, String token, String status,
 						String error, String wsUrl, String outRef) throws Exception {
-					List<String> refs = new ArrayList<String>();
-					if (outRef != null)
-						refs.add(outRef);
-    				createJobClient(finalUjsUrl, token).completeJob(job, token, status, error, 
-    						new Results().withWorkspaceurl(finalWsUrl).withWorkspaceids(refs));
-				}
-			};
-			taskConfig = new TaskQueueConfig(threadCount, queueDbDir, jobStatuses, wsUrl, allConfigProps);
+			List<String> refs = new ArrayList<String>();
+			if (outRef != null)
+			    refs.add(outRef);
+			createJobClient(finalUjsUrl, token).completeJob(job, token, status, error, 
+									new Results().withWorkspaceurl(finalWsUrl).withWorkspaceids(refs));
+		    }
+		};
+	    taskConfig = new TaskQueueConfig(threadCount, queueDbDir, jobStatuses, wsUrl, allConfigProps);
     	}
     	return taskConfig;
     }
@@ -104,34 +104,32 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     public static synchronized TaskQueue getTaskQueue() throws Exception {
     	if (taskHolder == null) {
     		TaskQueueConfig cfg = getTaskConfig();
-			taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder(), new ConstructDomainClustersBuilder(),
-					new SearchDomainsAndConstructClustersBuilder());
-			System.out.println("Initial queue size: " + TaskQueue.getDbConnection(cfg.getQueueDbDir()).collect(
-					"select count(*) from " + TaskQueue.QUEUE_TABLE_NAME, new us.kbase.common.utils.DbConn.SqlLoader<Integer>() {
-				public Integer collectRow(java.sql.ResultSet rs) throws java.sql.SQLException { return rs.getInt(1); }
+		taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder()); // , new ConstructDomainClustersBuilder(), new SearchDomainsAndConstructClustersBuilder());
+		System.out.println("Initial queue size: " + TaskQueue.getDbConnection(cfg.getQueueDbDir()).collect("select count(*) from " + TaskQueue.QUEUE_TABLE_NAME, new us.kbase.common.utils.DbConn.SqlLoader<Integer>() {
+			    public Integer collectRow(java.sql.ResultSet rs) throws java.sql.SQLException { return rs.getInt(1); }
 			}));
     	}
     	return taskHolder;
     }
     
     private static Map<String, String> loadConfig() throws Exception {
-		String configPath = System.getProperty(SYS_PROP_KB_DEPLOYMENT_CONFIG);
-		System.out.println(KBaseGeneFamiliesServer.class.getName() + ": Deployment config path was defined: " + configPath);
-		return new Ini(new File(configPath)).get(SERVICE_DEPLOYMENT_NAME);
+	String configPath = System.getProperty(SYS_PROP_KB_DEPLOYMENT_CONFIG);
+	System.out.println(KBaseGeneFamiliesServer.class.getName() + ": Deployment config path was defined: " + configPath);
+	return new Ini(new File(configPath)).get(SERVICE_DEPLOYMENT_NAME);
     }
     
-	private static UserAndJobStateClient createJobClient(String jobSrvUrl, String token) throws IOException, JsonClientException {
-		try {
-			UserAndJobStateClient ret = new UserAndJobStateClient(new URL(jobSrvUrl), new AuthToken(token));
-			ret.setIsInsecureHttpConnectionAllowed(true);
-			ret.setAllSSLCertificatesTrusted(true);
-			return ret;
-		} catch (TokenFormatException e) {
-			throw new JsonClientException(e.getMessage(), e);
-		} catch (UnauthorizedException e) {
-			throw new JsonClientException(e.getMessage(), e);
-		}
+    private static UserAndJobStateClient createJobClient(String jobSrvUrl, String token) throws IOException, JsonClientException {
+	try {
+	    UserAndJobStateClient ret = new UserAndJobStateClient(new URL(jobSrvUrl), new AuthToken(token));
+	    ret.setIsInsecureHttpConnectionAllowed(true);
+	    ret.setAllSSLCertificatesTrusted(true);
+	    return ret;
+	} catch (TokenFormatException e) {
+	    throw new JsonClientException(e.getMessage(), e);
+	} catch (UnauthorizedException e) {
+	    throw new JsonClientException(e.getMessage(), e);
 	}
+    }
     //END_CLASS_HEADER
 
     public KBaseGeneFamiliesServer() throws Exception {
