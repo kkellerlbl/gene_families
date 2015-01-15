@@ -21,4 +21,11 @@ and needs to be run by a developer with write access to that workspace.
 Once the libraries are downloaded using the script above, the
 developer needs to run "make prepare_library_objects"
 
+To compile this yourself, you need certain branches of other modules:
+1) the dev-prototypes branch of typecomp
+2) the dev branch of java_type_generator
 
+Do "make src" to regenerate the java files from the spec, and "make
+compile_typespec" to regenerate client libraries.  However, to make
+the deployment team's job easier, all these generate files are
+currently checked in.

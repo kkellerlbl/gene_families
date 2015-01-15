@@ -38,7 +38,7 @@ test-scripts:
 test-java:  prepare-thirdparty-dbs
 	$(ANT) test
 
-compile: src
+compile:
 	$(ANT) war
 
 setup-lib-dir:
@@ -55,7 +55,7 @@ compile-typespec: setup-lib-dir
 	rm -f lib/$(SERVICE_NAME)*.py
 	rm -f lib/$(SERVICE_NAME)*.pm
 
-build-docs: compile-typespec
+build-docs:
 	mkdir -p docs
 	pod2html --infile=lib/Bio/KBase/$(SERVICE_NAME)/Client.pm --outfile=docs/$(SERVICE_NAME).html
 	rm -f pod2htmd.tmp
