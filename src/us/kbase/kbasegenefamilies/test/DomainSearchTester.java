@@ -24,16 +24,16 @@ import us.kbase.common.service.Tuple2;
 import us.kbase.common.service.Tuple7;
 import us.kbase.common.service.UObject;
 import us.kbase.common.service.UnauthorizedException;
-import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder;
-import us.kbase.kbasegenefamilies.ConstructDomainClustersParams;
+// import us.kbase.kbasegenefamilies.ConstructDomainClustersBuilder;
+// import us.kbase.kbasegenefamilies.ConstructDomainClustersParams;
 import us.kbase.kbasegenefamilies.DefaultTaskBuilder;
-import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
-import us.kbase.kbasegenefamilies.DomainClusterStat;
+// import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
+// import us.kbase.kbasegenefamilies.DomainClusterStat;
 import us.kbase.kbasegenefamilies.GenomeStat;
 import us.kbase.kbasegenefamilies.KBaseGeneFamiliesClient;
 import us.kbase.kbasegenefamilies.ObjectStorage;
-import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;
-import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams;
+// import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;
+// import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersParams;
 import us.kbase.kbasegenefamilies.SearchDomainsParams;
 import us.kbase.kbasetrees.MSA;
 import us.kbase.userandjobstate.UserAndJobStateClient;
@@ -82,6 +82,7 @@ public class DomainSearchTester {
 	printClusters(client, wsName + "/" + outId, new File("dcsr_test.txt"));
     }
 
+    /*
     private static void runDomainClustersExtensionLocally(WorkspaceClient client, String token, File tempDir) throws Exception {
 	String annotRef = wsName + "/TempAnnotation";
 	String outId = "TempDomains3";
@@ -93,7 +94,9 @@ public class DomainSearchTester {
 		    "temp_job_id", wsName + "/" + outId);
 	printClusters(client, wsName + "/" + outId, new File("dcsr3_test.txt"));
     }
-	
+    */
+
+    /*
     private static void printClusters(WorkspaceClient client, String dcsrRef, File out) throws Exception {
 	DomainClusterSearchResult dcsr = getObject(client, dcsrRef, DomainClusterSearchResult.class);
 	PrintWriter pw = new PrintWriter(out);
@@ -121,7 +124,9 @@ public class DomainSearchTester {
 	}
 	pw.close();
     }
-	
+    */
+
+    /*
     private static void runDomainSearchRemotely(WorkspaceClient client, String token) throws Exception {
 	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(geneFamiliesUrl), new AuthToken(token));
 	gf.setIsInsecureHttpConnectionAllowed(true);
@@ -219,7 +224,8 @@ public class DomainSearchTester {
 	}
     }
 */
-	
+
+    /*
     private static void findMSA(WorkspaceClient wc) throws Exception {
 	String dcsrRef = domainWsName + "/" + defaultDCSRObjectName;
 	DomainClusterSearchResult dcsr = getObject(wc, dcsrRef, DomainClusterSearchResult.class);
@@ -241,6 +247,7 @@ public class DomainSearchTester {
 	MSA msa = od.getData().asClassInstance(MSA.class);
 	System.out.println("MSA: " + msa.getAlignmentLength() + ", " + od.getInfo());
     }
+    */
 	
     private static void testSpeed(WorkspaceClient wc) throws Exception {
 	String wsName = "subdata_extraction_test";
