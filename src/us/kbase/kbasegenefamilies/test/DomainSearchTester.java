@@ -29,7 +29,7 @@ import us.kbase.common.service.UnauthorizedException;
 import us.kbase.kbasegenefamilies.DefaultTaskBuilder;
 // import us.kbase.kbasegenefamilies.DomainClusterSearchResult;
 // import us.kbase.kbasegenefamilies.DomainClusterStat;
-import us.kbase.kbasegenefamilies.GenomeStat;
+// import us.kbase.kbasegenefamilies.GenomeStat;
 import us.kbase.kbasegenefamilies.KBaseGeneFamiliesClient;
 import us.kbase.kbasegenefamilies.ObjectStorage;
 // import us.kbase.kbasegenefamilies.SearchDomainsAndConstructClustersBuilder;

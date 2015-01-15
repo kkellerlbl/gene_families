@@ -61,7 +61,7 @@ build-docs:
 	rm -f pod2htmd.tmp
 	$(ANT) javadoc
 
-src: KBaseGeneFamilies.spec
+compile-java-typespec: KBaseGeneFamilies.spec
 	./generate_java_classes.sh
 
 download-thirdparty-bins:
