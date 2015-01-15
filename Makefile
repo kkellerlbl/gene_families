@@ -35,10 +35,10 @@ test-service:
 test-scripts:
 	@echo "No scripts"
 
-test-java:  prepare-thirdparty-dbs
+test-java:
 	$(ANT) test
 
-compile: src
+compile: download-thirdparty-bins
 	$(ANT) war
 
 setup-lib-dir:
@@ -55,13 +55,13 @@ compile-typespec: setup-lib-dir
 	rm -f lib/$(SERVICE_NAME)*.py
 	rm -f lib/$(SERVICE_NAME)*.pm
 
-build-docs: compile-typespec
+build-docs:
 	mkdir -p docs
 	pod2html --infile=lib/Bio/KBase/$(SERVICE_NAME)/Client.pm --outfile=docs/$(SERVICE_NAME).html
 	rm -f pod2htmd.tmp
 	$(ANT) javadoc
 
-src: KBaseGeneFamilies.spec
+compile-java-typespec: KBaseGeneFamilies.spec
 	./generate_java_classes.sh
 
 download-thirdparty-bins:
@@ -73,7 +73,7 @@ prepare-thirdparty-dbs:	download-thirdparty-bins
 prepare-library-objects: prepare-thirdparty-dbs compile
 	java -jar dist/($SERVICE_NAME).jar
 
-prepare-deploy-target:	prepare-thirdparty-dbs
+prepare-deploy-target:	download-thirdparty-bins
 
 deploy-client:
 	@echo "No deployment for client"
