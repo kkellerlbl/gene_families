@@ -38,7 +38,7 @@ test-scripts:
 test-java:  prepare-thirdparty-dbs
 	$(ANT) test
 
-compile:
+compile: download-thirdparty-bins
 	$(ANT) war
 
 setup-lib-dir:
@@ -73,7 +73,7 @@ prepare-thirdparty-dbs:	download-thirdparty-bins
 prepare-library-objects: prepare-thirdparty-dbs compile
 	java -jar dist/($SERVICE_NAME).jar
 
-prepare-deploy-target:	prepare-thirdparty-dbs
+prepare-deploy-target:	download-thirdparty-bins
 
 deploy-client:
 	@echo "No deployment for client"
