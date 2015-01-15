@@ -79,8 +79,8 @@ public class EColiTest {
     /**
        Check that we can annotate E. coli with SMART.  This is
        fairly fast.
-    */
     @Test
+    */
 	public void searchEColiPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -183,7 +183,8 @@ public class EColiTest {
        the auth.properties file, as auth.token.  Replace the text
        in the file that says "paste token here" with your token.
     */
-    public static AuthToken getDevToken() throws Exception {
+    public static AuthToken getDevToken() {
+	AuthToken rv = null;
 	Properties prop = new Properties();
 	try {
 	    prop.load(EColiTest.class.getClassLoader().getResourceAsStream("auth.properties"));
@@ -192,8 +193,15 @@ public class EColiTest {
 	}
 	catch (SecurityException e) {
 	}
-	String value = prop.getProperty("auth.token", null);
-	return new AuthToken(value);
+	try {
+	    String value = prop.getProperty("auth.token", null);
+	    rv = new AuthToken(value);
+	}
+	catch (Exception e) {
+	    System.out.println(e.getMessage());
+	    rv = null;
+	}
+	return rv;
     }
 
     private static String getRefFromObjectInfo(Tuple11<Long, String, String, String, Long, String, Long, String, String, Long, Map<String,String>> info) {

@@ -35,7 +35,7 @@ test-service:
 test-scripts:
 	@echo "No scripts"
 
-test-java:  prepare-thirdparty-dbs
+test-java:
 	$(ANT) test
 
 compile: download-thirdparty-bins
