@@ -118,6 +118,8 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     
     private static Map<String, String> loadConfig() throws Exception {
 	String configPath = System.getProperty(SYS_PROP_KB_DEPLOYMENT_CONFIG);
+	if (configPath == null)
+	    configPath = "/kb/dev_container/modules/gene_families/deploy.cfg";
 	System.out.println(KBaseGeneFamiliesServer.class.getName() + ": Deployment config path was defined: " + configPath);
 	return new Ini(new File(configPath)).get(SERVICE_DEPLOYMENT_NAME);
     }

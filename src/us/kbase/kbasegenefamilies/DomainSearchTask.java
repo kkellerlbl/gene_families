@@ -96,9 +96,7 @@ public class DomainSearchTask {
 		Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> element = elements.getE5();
 		if (element != null) {
 		    for (String key : element.keySet()) {
-			System.out.println("domain="+elements.getE1());
 			domains.add(elements.getE1());
-			System.out.println("feature="+key);
 			features.add(key);
 		    }
 		}

@@ -16,7 +16,7 @@
   <property name="docs" value="docs/javadoc"/>
   <property name="jarsdir" value="../jars/lib/jars"/>
   <property name="bindir" value="data/bin/"/>
-  <property name="deploycfg" value=""/>
+  <property name="deploycfg" value="/"/>
 
   <fileset dir="${jarsdir}" id="serverlib">
     <include name="ini4j/ini4j-0.5.2.jar"/>
