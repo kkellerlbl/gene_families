@@ -44,7 +44,7 @@ public class SearchDomainsBuilder extends DefaultTaskBuilder<SearchDomainsParams
 	
     private void saveResult(String ws, String id, String token, DomainAnnotation annRes, 
 			    SearchDomainsParams inputData) throws Exception {
-	saveAnnotation(storage, token, ws, id, annRes, inputData.getGenome(), inputData, "construct_multiple_alignment");
+	saveAnnotation(storage, token, ws, id, annRes, inputData.getGenome(), inputData, "search_domains");
     }
 	
     public static String saveAnnotation(ObjectStorage storage, String token, String ws, String id, 
@@ -52,6 +52,7 @@ public class SearchDomainsBuilder extends DefaultTaskBuilder<SearchDomainsParams
 					Object inputData, String serviceMethod) throws Exception {
 	ObjectSaveData data = new ObjectSaveData().withData(new UObject(annRes))
 	    .withType(DomainSearchTask.domainAnnotationWsType)
+	    .withMeta(DomainSearchTask.getMetadata(annRes))
 	    .withProvenance(Arrays.asList(new ProvenanceAction()
 					  .withDescription("Domain annotation was calculated with rps-blast/hmmer")
 					  .withService(KBaseGeneFamiliesServer.SERVICE_REGISTERED_NAME)

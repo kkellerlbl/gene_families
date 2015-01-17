@@ -38,15 +38,19 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     private static TaskQueue taskHolder = null;
     private static TaskQueueConfig taskConfig = null;
     
-    private static final String defaultWsUrl = "https://kbase.us/services/ws/";
-    private static final String defaultUjsUrl = "https://kbase.us/services/userandjobstate/";
+    public static final String defaultWsUrl = "https://kbase.us/services/ws/";
+    public static final String defaultGfUrl = "https://kbase.us/services/gene-families/";
+    public static final String defaultUjsUrl = "https://kbase.us/services/userandjobstate/";
+    public static final String defaultShockUrl = "https://kbase.us/services/shock-api/";
     
     public static final String SYS_PROP_KB_DEPLOYMENT_CONFIG = "KB_DEPLOYMENT_CONFIG";
     
     public static final String CFG_PROP_THREAD_COUNT = "thread.count";
     public static final String CFG_PROP_QUEUE_DB_DIR = "queue.db.dir";
     public static final String CFG_PROP_WS_SRV_URL = "workspace.srv.url";
+    public static final String CFG_PROP_GF_SRV_URL = "genefamilies.srv.url";
     public static final String CFG_PROP_JSS_SRV_URL = "jobstatus.srv.url";
+    public static final String CFG_PROP_SHOCK_SRV_URL = "shock.srv.url";
     public static final String CFG_PROP_TEMP_DIR = "scratch";
     public static final String CFG_PROP_DATA_DIR = "data.dir";
     
@@ -103,11 +107,11 @@ public class KBaseGeneFamiliesServer extends JsonServerServlet {
     
     public static synchronized TaskQueue getTaskQueue() throws Exception {
     	if (taskHolder == null) {
-    		TaskQueueConfig cfg = getTaskConfig();
-		taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder()); // , new ConstructDomainClustersBuilder(), new SearchDomainsAndConstructClustersBuilder());
-		System.out.println("Initial queue size: " + TaskQueue.getDbConnection(cfg.getQueueDbDir()).collect("select count(*) from " + TaskQueue.QUEUE_TABLE_NAME, new us.kbase.common.utils.DbConn.SqlLoader<Integer>() {
-			    public Integer collectRow(java.sql.ResultSet rs) throws java.sql.SQLException { return rs.getInt(1); }
-			}));
+	    TaskQueueConfig cfg = getTaskConfig();
+	    taskHolder = new TaskQueue(cfg, new SearchDomainsBuilder()); // , new ConstructDomainClustersBuilder(), new SearchDomainsAndConstructClustersBuilder());
+	    System.out.println("Initial queue size: " + TaskQueue.getDbConnection(cfg.getQueueDbDir()).collect("select count(*) from " + TaskQueue.QUEUE_TABLE_NAME, new us.kbase.common.utils.DbConn.SqlLoader<Integer>() {
+			public Integer collectRow(java.sql.ResultSet rs) throws java.sql.SQLException { return rs.getInt(1); }
+		    }));
     	}
     	return taskHolder;
     }
