@@ -35,13 +35,17 @@ public class ClientTest {
     /**
        start a client
     */
-    public KBaseGeneFamiliesClient createGfClient() throws Exception {
+    public KBaseGeneFamiliesClient createGfClient(AuthToken token) throws Exception {
 	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
 	Map<String,String> props = cfg.getAllConfigProps();
 	String gfUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_GF_SRV_URL);
 	if (gfUrl==null)
 	    gfUrl = KBaseGeneFamiliesServer.defaultGfUrl;
-	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(gfUrl));
+	KBaseGeneFamiliesClient gf = null;
+	if (token==null)
+	    gf = new KBaseGeneFamiliesClient(new URL(gfUrl));
+	else
+	    gf = new KBaseGeneFamiliesClient(new URL(gfUrl),token);
 	gf.setIsInsecureHttpConnectionAllowed(true);
 	return gf;
     }
@@ -64,7 +68,7 @@ public class ClientTest {
        check that we can read version
     */
     @Test public void getVersion() throws Exception {
-	KBaseGeneFamiliesClient gf = createGfClient();
+	KBaseGeneFamiliesClient gf = createGfClient(null);
 	String version = gf.version();
 	System.out.println("service version is "+version);
 	assertNotNull(version);
@@ -80,7 +84,7 @@ public class ClientTest {
 
 	String genomeRef = privateWsName+"/"+dvID;
 
-	KBaseGeneFamiliesClient gf = createGfClient();
+	KBaseGeneFamiliesClient gf = createGfClient(token);
 	String jobId = gf.searchDomains(new SearchDomainsParams()
 					.withDmsRef(smartRef)
 					.withGenome(genomeRef)
@@ -120,14 +124,14 @@ public class ClientTest {
     /**
        Check that we can annotate DvH with all domains.  This
        should take about an hour.
-    */
     @Test
+    */
     public void searchDVAll() throws Exception {
 	AuthToken token = getDevToken();
 
 	String genomeRef = privateWsName+"/"+dvID;
 	
-	KBaseGeneFamiliesClient gf = createGfClient();
+	KBaseGeneFamiliesClient gf = createGfClient(token);
 	String jobId = gf.searchDomains(new SearchDomainsParams()
 					.withDmsRef(allLibsRef)
 					.withGenome(genomeRef)
