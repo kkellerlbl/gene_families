@@ -15,10 +15,9 @@ import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
 import us.kbase.shock.client.*;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 
 public class DomainModelLibPreparation {
-    private static final String shockUrl = "https://kbase.us/services/shock-api/";
-    private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
@@ -203,6 +202,11 @@ public class DomainModelLibPreparation {
 
 	// store them all in Shock
 	AuthToken token = getDevToken();
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String shockUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_SHOCK_SRV_URL);
+	if (shockUrl==null)
+	    shockUrl = KBaseGeneFamiliesServer.defaultShockUrl;
 	BasicShockClient client = new BasicShockClient(new URL(shockUrl), token);
 	for (Handle h : libraryFiles) {
 	    File f = new File(libDir.getPath()+"/"+h.getFileName());
@@ -361,6 +365,13 @@ public class DomainModelLibPreparation {
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
 	WorkspaceClient rv = null;
+
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+	if (wsUrl==null)
+	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+	
 	if (token==null)
 	    rv = new WorkspaceClient(new URL(wsUrl));
 	else

@@ -18,13 +18,12 @@ import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
 import us.kbase.userandjobstate.UserAndJobStateClient;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
    Tests for annotating genome (DvH) via the client
 */
 public class ClientTest {
-    private static final String wsUrl = "https://kbase.us/services/ws/";
-    private static final String gfUrl = "http://localhost:8123";
     private static final String genomeWsName = "KBasePublicGenomesV4";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String privateWsName = "jmc:gene_domains_test";
@@ -34,9 +33,24 @@ public class ClientTest {
     private static final String allLibsRef = domainWsName+"/All";
 
     /**
+       start a client
+    */
+    public KBaseGeneFamiliesClient createGfClient() throws Exception {
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String gfUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_GF_SRV_URL);
+	if (gfUrl==null)
+	    gfUrl = KBaseGeneFamiliesServer.defaultGfUrl;
+	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(gfUrl));
+	gf.setIsInsecureHttpConnectionAllowed(true);
+	return gf;
+    }
+
+    /**
        check that we can read DvH genome from private WS
+    */
     @Test
-    */public void getDV() throws Exception {
+    public void getDV() throws Exception {
 	Genome genome = null;
 	
 	WorkspaceClient wc = createWsClient(getDevToken());
@@ -50,8 +64,7 @@ public class ClientTest {
        check that we can read version
     */
     @Test public void getVersion() throws Exception {
-	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(gfUrl));
-	gf.setIsInsecureHttpConnectionAllowed(true);
+	KBaseGeneFamiliesClient gf = createGfClient();
 	String version = gf.version();
 	System.out.println("service version is "+version);
 	assertNotNull(version);
@@ -60,22 +73,27 @@ public class ClientTest {
     /**
        Check that we can annotate DvH with SMART.  This is
        fairly fast.
-    @Test
     */
+    @Test
     public void searchDVPSSM() throws Exception {
-
 	AuthToken token = getDevToken();
 
 	String genomeRef = privateWsName+"/"+dvID;
 
-	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(gfUrl), token);
-	gf.setIsInsecureHttpConnectionAllowed(true);
+	KBaseGeneFamiliesClient gf = createGfClient();
 	String jobId = gf.searchDomains(new SearchDomainsParams()
 					.withDmsRef(smartRef)
 					.withGenome(genomeRef)
 					.withOutWorkspace(privateWsName)
 					.withOutResultId("DvH-SMART"));
-	UserAndJobStateClient jscl = new UserAndJobStateClient(new URL("https://kbase.us/services/userandjobstate/"), token);
+
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String ujsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_JSS_SRV_URL);
+	if (ujsUrl==null)
+	    ujsUrl = KBaseGeneFamiliesServer.defaultUjsUrl;
+	
+	UserAndJobStateClient jscl = new UserAndJobStateClient(new URL(ujsUrl), token);
 	jscl.setAllSSLCertificatesTrusted(true);
 	jscl.setIsInsecureHttpConnectionAllowed(true);
 	for (int iter = 0; ; iter++) {
@@ -102,22 +120,27 @@ public class ClientTest {
     /**
        Check that we can annotate DvH with all domains.  This
        should take about an hour.
-    @Test
     */
+    @Test
     public void searchDVAll() throws Exception {
-
 	AuthToken token = getDevToken();
 
 	String genomeRef = privateWsName+"/"+dvID;
-
-	KBaseGeneFamiliesClient gf = new KBaseGeneFamiliesClient(new URL(gfUrl), token);
-	gf.setIsInsecureHttpConnectionAllowed(true);
+	
+	KBaseGeneFamiliesClient gf = createGfClient();
 	String jobId = gf.searchDomains(new SearchDomainsParams()
 					.withDmsRef(allLibsRef)
 					.withGenome(genomeRef)
 					.withOutWorkspace(privateWsName)
 					.withOutResultId("DvH-AllDomains"));
-	UserAndJobStateClient jscl = new UserAndJobStateClient(new URL("https://kbase.us/services/userandjobstate/"), token);
+
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String ujsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_JSS_SRV_URL);
+	if (ujsUrl==null)
+	    ujsUrl = KBaseGeneFamiliesServer.defaultUjsUrl;
+	
+	UserAndJobStateClient jscl = new UserAndJobStateClient(new URL(ujsUrl), token);
 	jscl.setAllSSLCertificatesTrusted(true);
 	jscl.setIsInsecureHttpConnectionAllowed(true);
 	for (int iter = 0; ; iter++) {
@@ -147,6 +170,13 @@ public class ClientTest {
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
 	WorkspaceClient rv = null;
+	
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+	if (wsUrl==null)
+	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+	
 	if (token==null)
 	    rv = new WorkspaceClient(new URL(wsUrl));
 	else

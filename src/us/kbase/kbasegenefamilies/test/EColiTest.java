@@ -17,12 +17,12 @@ import us.kbase.common.service.*;
 import us.kbase.workspace.*;
 import us.kbase.kbasegenomes.*;
 import us.kbase.kbasegenefamilies.*;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
    Tests for setting up sample db and annotating E. coli locally
 */
 public class EColiTest {
-    private static final String wsUrl = "https://kbase.us/services/ws/";
     private static final String genomeWsName = "KBasePublicGenomesV4";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary";
@@ -79,8 +79,8 @@ public class EColiTest {
     /**
        Check that we can annotate E. coli with SMART.  This is
        fairly fast.
-    @Test
     */
+    @Test
 	public void searchEColiPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -94,21 +94,20 @@ public class EColiTest {
 						       smartRef,
 						       ecoliRef);
 
-	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withName("SMART-g.0-2")
+						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
-	*/
     }
 
     /**
        Check that we can annotate E. coli with TIGRFAMs.  Takes ~12 min
        on a 2-CPU Magellan instance.
-    @Test
     */
+    @Test
 	public void searchEColiHMM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -122,21 +121,20 @@ public class EColiTest {
 						       tigrRef,
 						       ecoliRef);
 
-	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
+						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withName("TIGR-g.0")
 						  .withData(new UObject(results)))));
-	*/
     }
 
     /**
        Check that we can annotate E. coli with all domain libraries.
        Takes ~65 min on a 2-CPU Magellan instance.
-    @Test
     */
+    @Test
 	public void searchEColiAll() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -154,6 +152,7 @@ public class EColiTest {
 		       .withWorkspace(domainWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
+						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withName("Alldomains-g.0")
 						  .withData(new UObject(results)))));
     }
@@ -164,6 +163,13 @@ public class EColiTest {
     */
     public static WorkspaceClient createWsClient(AuthToken token) throws Exception {
 	WorkspaceClient rv = null;
+
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String wsUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_WS_SRV_URL);
+	if (wsUrl==null)
+	    wsUrl = KBaseGeneFamiliesServer.defaultWsUrl;
+	
 	if (token==null)
 	    rv = new WorkspaceClient(new URL(wsUrl));
 	else

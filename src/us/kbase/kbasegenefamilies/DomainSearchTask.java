@@ -17,6 +17,7 @@ import us.kbase.common.utils.AlignUtil;
 import us.kbase.common.utils.CorrectProcess;
 import us.kbase.common.utils.FastaWriter;
 import us.kbase.common.utils.RpsBlastParser;
+import us.kbase.common.taskqueue.TaskQueueConfig;
 import us.kbase.kbasegenefamilies.bin.BinPreparator;
 import us.kbase.kbasegenefamilies.util.Utils;
 import us.kbase.kbasegenomes.Feature;
@@ -35,8 +36,6 @@ import us.kbase.shock.client.*;
    workspace objects.
 */
 public class DomainSearchTask {
-    private static final String shockUrl = "https://kbase.us/services/shock-api/";
-
     private static String MAX_BLAST_EVALUE = "1e-04";
     private static int MIN_COVERAGE = 50;
     private static final int modelBufferMaxSize = 100;
@@ -79,6 +78,39 @@ public class DomainSearchTask {
 	return rv;
     }
 
+    /**
+       calculate statistics to store in metadata, used for quick widget drawing
+    */
+    public static Map<String,String> getMetadata(DomainAnnotation ann) throws Exception {
+	Map<String,String> metadata = new HashMap<String,String>();
+
+	HashSet<String> domains = new HashSet<String>();
+	HashSet<String> features = new HashSet<String>();
+
+	Map<String, List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>> data = ann.getData();
+	for (String contigID : data.keySet()) {
+	    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> annElements = data.get(contigID);
+	    ListIterator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> iterator = annElements.listIterator();
+	    while (iterator.hasNext()) {
+		Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>> elements = iterator.next();
+		Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> element = elements.getE5();
+		if (element != null) {
+		    for (String key : element.keySet()) {
+			System.out.println("domain="+elements.getE1());
+			domains.add(elements.getE1());
+			System.out.println("feature="+key);
+			features.add(key);
+		    }
+		}
+	    }
+	}
+
+	metadata.put("annotated_domains",""+domains.size());
+	metadata.put("annotated_features",""+features.size());
+
+	return metadata;
+    }
+    
     /**
        combines annotation data from two DomainAnnotation objects;
        must be from the same genome.  Note that this will fail if
@@ -456,6 +488,11 @@ public class DomainSearchTask {
        cannot currently be uploaded)
     */
     private void prepareLibraryFiles(DomainLibrary dl) throws Exception {
+	TaskQueueConfig cfg = KBaseGeneFamiliesServer.getTaskConfig();
+	Map<String,String> props = cfg.getAllConfigProps();
+	String shockUrl = props.get(KBaseGeneFamiliesServer.CFG_PROP_SHOCK_SRV_URL);
+	if (shockUrl==null)
+	    shockUrl = KBaseGeneFamiliesServer.defaultShockUrl;
 	BasicShockClient client = new BasicShockClient(new URL(shockUrl));
 	File dir = getDomainsDir();
 	for (Handle h : dl.getLibraryFiles()) {
