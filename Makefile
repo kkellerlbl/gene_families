@@ -71,7 +71,7 @@ prepare-thirdparty-dbs:	download-thirdparty-bins
 	./prepare_3rd_party_dbs.sh
 
 prepare-library-objects: prepare-thirdparty-dbs compile
-	java -jar dist/($SERVICE_NAME).jar
+	java -jar dist/$(SERVICE_NAME).jar
 
 prepare-deploy-target:	download-thirdparty-bins
 
