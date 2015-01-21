@@ -64,7 +64,22 @@ public class DomainModelLibPreparation {
 			   "TIGR",
 			   "http://www.jcvi.org/cgi-bin/tigrfams/HmmReportPage.cgi?acc=");
 			   
-	String[] libraries = new String[] {"SMART-6.0-CDD-3.12"};
+	String[] libraries = new String[] {"COGs-CDD-3.12"};
+	
+	makeDomainModelSet("COGs-only",
+			   libraries);
+
+	libraries[0] = "CDD-NCBI-curated-3.12";
+	
+	makeDomainModelSet("NCBI-CDD-only",
+			   libraries);
+	
+	libraries[0] = "Pfam-27.0";
+	
+	makeDomainModelSet("Pfam-only",
+			   libraries);
+	
+	libraries[0] = "SMART-6.0-CDD-3.12";
 	
 	makeDomainModelSet("SMART-only",
 			   libraries);
