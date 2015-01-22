@@ -52,8 +52,8 @@ public class ClientTest {
 
     /**
        check that we can read DvH genome from private WS
-    */
     @Test
+    */
     public void getDV() throws Exception {
 	Genome genome = null;
 	
@@ -67,7 +67,8 @@ public class ClientTest {
     /**
        check that we can read version
     */
-    @Test public void getVersion() throws Exception {
+    @Test
+	public void getVersion() throws Exception {
 	KBaseGeneFamiliesClient gf = createGfClient(null);
 	String version = gf.version();
 	System.out.println("service version is "+version);
@@ -77,8 +78,8 @@ public class ClientTest {
     /**
        Check that we can annotate DvH with SMART.  This is
        fairly fast.
-    */
     @Test
+    */
     public void searchDVPSSM() throws Exception {
 	AuthToken token = getDevToken();
 
