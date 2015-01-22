@@ -19,10 +19,12 @@ import us.kbase.common.taskqueue.TaskQueueConfig;
 
 public class DomainModelLibPreparation {
     private static final String domainWsName = "KBasePublicGeneDomains";
-    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary-1.0";
-    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet-1.0";
+    private static final String domainLibraryType = "KBaseGeneFamilies.DomainLibrary";
+    private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
 
     public static void main(String[] args) throws Exception {
+	checkOrCreateWorkspace();
+	
 	parseDomainLibrary("COGs-CDD-3.12",
 			   "ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/",
 			   "/kb/dev_container/modules/gene_families/data/db/Cog",
@@ -97,6 +99,21 @@ public class DomainModelLibPreparation {
 	
 	makeDomainModelSet("All",
 			   libraries);
+    }
+
+    /**
+       make the public workspace, if it does not already exist on this
+       version of the service
+    */
+    private static void checkOrCreateWorkspace() throws Exception {
+	WorkspaceClient wc = createWsClient(getDevToken());
+	try {
+	    wc.getWorkspaceInfo(new WorkspaceIdentity().withWorkspace(domainWsName));
+	}
+	catch (Exception e) {
+	    System.err.println(e.getMessage());
+	    wc.createWorkspace(new CreateWorkspaceParams().withGlobalread("r").withWorkspace(domainWsName));
+	}
     }
 
     /**
