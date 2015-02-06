@@ -37,8 +37,6 @@ import us.kbase.shock.client.*;
 */
 public class DomainSearchTask {
     private static String MAX_BLAST_EVALUE = "1e-04";
-    private static int MIN_COVERAGE = 50;
-    private static final int modelBufferMaxSize = 100;
 	
     public static final String domainAnnotationWsType = "KBaseGeneFamilies.DomainAnnotation";
     public static final String domainAlignmentsWsType = "KBaseGeneFamilies.DomainAlignments";
@@ -172,22 +170,30 @@ public class DomainSearchTask {
 	    int protCount = 0;
 	    final Map<Integer, Tuple2<String, Long>> posToContigFeatIndex = new LinkedHashMap<Integer, Tuple2<String, Long>>();
 	    Map<String, Tuple2<String, Long>> featIdToContigFeatIndex = new TreeMap<String, Tuple2<String, Long>>();
+	    // to work around genomes with missing contigs:
+	    HashSet<String> realContigs = new HashSet<String>();
 	    // write out each protein sequentially into a FASTA file,
-	    // keeping track of its position in the genome
+	    // keeping track of its (first) position in the genome
 	    try {
-		for (int pos = 0; pos < genome.getFeatures().size(); pos++) {
-		    Feature feat = genome.getFeatures().get(pos);
+		List<Feature> features = genome.getFeatures();
+		int pos = -1;
+		for (Feature feat : features) {
+		    pos++;
 		    String seq = feat.getProteinTranslation();
-		    if (feat.getLocation().size() != 1)
+		    if (feat.getLocation().size() < 1)
 			continue;
 		    Tuple4<String, Long, String, Long> loc = feat.getLocation().get(0);
 		    String contigId = loc.getE1();
+		    String featId = feat.getId();
+		    if ((contigId==null) || (featId==null))
+			continue;
 		    if (seq != null && !seq.isEmpty()) {
 			fw.write("" + pos, seq);
 			Tuple2<String, Long> contigFeatIndex = new Tuple2<String, Long>().withE1(contigId);
 			posToContigFeatIndex.put(pos, contigFeatIndex);
-			featIdToContigFeatIndex.put(feat.getId(), contigFeatIndex);
+			featIdToContigFeatIndex.put(featId, contigFeatIndex);
 			protCount++;
+			realContigs.add(contigId);
 		    }
 		    List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
 		    if (prots == null) {
@@ -211,12 +217,24 @@ public class DomainSearchTask {
 	    if (protCount == 0)
 		throw new IllegalStateException("There are no protein translations in genome " + genomeName + " (" + genomeRef + ")");
 
-	    // make more indices
-	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
+	    // make contig-based indices
+	    HashMap<String,Long> contigLengths = new HashMap<String,Long>();
 	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
 		String contigId = genome.getContigIds().get(contigPos);
 		if (!contig2prots.containsKey(contigId))
 		    continue;
+		long contigLength = genome.getContigLengths().get(contigPos);
+		contigLengths.put(contigId, new Long(contigLength));
+	    }
+	    // add missing contigs as length 1
+	    for (String contigId : realContigs) {
+		if (contigLengths.get(contigId) == null)
+		    contigLengths.put(contigId, new Long(1));
+	    }
+
+	    // map contigs to "size" (both length and # of proteins)
+	    Map<String, Tuple2<Long, Long>> contigSizes = new TreeMap<String, Tuple2<Long, Long>>();
+	    for (String contigId : contigLengths.keySet()) {
 		List<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>> prots = contig2prots.get(contigId);
 		Collections.sort(prots, new Comparator<Tuple5<String, Long, Long, Long, Map<String, List<Tuple5<Long, Long, Double, Double, Double>>>>>() {
 			@Override
@@ -225,13 +243,13 @@ public class DomainSearchTask {
 			    return Long.compare(o1.getE2(), o2.getE2());
 			}
 		    });
-		long contigSize = genome.getContigLengths().get(contigPos);
-		contigSizes.put(contigId, new Tuple2<Long, Long>().withE1(contigSize).withE2((long)prots.size()));
-		for (int index = 0; index < prots.size(); index++) {
-		    String featId = prots.get(index).getE1();
+		long contigLength = contigLengths.get(contigId).longValue();
+		contigSizes.put(contigId, new Tuple2<Long, Long>().withE1(contigLength).withE2((long)prots.size()));
+		for (int i=0; i<prots.size(); i++) {
+		    String featId = prots.get(i).getE1();
 		    Tuple2<String, Long> contigFeatIndex = featIdToContigFeatIndex.get(featId);
 		    if (contigFeatIndex != null)
-			contigFeatIndex.setE2((long)index);
+			contigFeatIndex.setE2((long)i);
 		}
 	    }
 
@@ -337,7 +355,6 @@ public class DomainSearchTask {
 
 				    // save this hit
 				    double coverage = (double)hLength / (double)modelLength;
-				    String alignedSeq = "TEST"; // fake alignments
 				    Tuple2<String, Long> contigIdFeatIndex = posToContigFeatIndex.get(featurePos);
 				    long featureIndex = contigIdFeatIndex.getE2();
 				    Map<String, List<Tuple5<Long, Long, Double, Double, Double>>> domains = contig2prots.get(contigIdFeatIndex.getE1()).get((int)featureIndex).getE5();
