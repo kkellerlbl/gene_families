@@ -20,30 +20,35 @@ import us.kbase.kbasegenefamilies.*;
 import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
-   Tests for setting up sample db and annotating Sorgum locally
+   Tests for setting up sample db and annotating Sorghum locally
 */
-public class SorgumTest {
+public class SorghumTest {
     private static final String genomeWsName = "KBaseExampleData";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String privateWsName = "jmc:gene_domains_test";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String sorgumRef = genomeWsName+"/Sbicolor.JGI-v2.1";
+    private static final String sorghumRef = genomeWsName+"/Sbicolor.JGI-v2.1";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
     /**
-       check that we can read sorgum genome from WS
+       check that we can read sorghum genome from WS
     */
-    @Test public void getSorgum() throws Exception {
+    @Test public void getSorghum() throws Exception {
 	Genome genome = null;
 	
 	System.out.println("Reading genome from WS");
 	WorkspaceClient wc = createWsClient(null);
-	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(sorgumRef))).get(0).getData().asClassInstance(Genome.class);
+	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(sorghumRef))).get(0).getData().asClassInstance(Genome.class);
+
+	// save copy for debugging:
+	// ObjectMapper mapper = new ObjectMapper();
+	// File f = new File("/kb/dev_container/modules/gene_families/data/tmp/sbi");
+	// mapper.writeValue(f,genome);
 	
 	System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "Sorgum bicolor");
+	assertEquals(genome.getScientificName(), "Sorghum bicolor");
     }
 
     /**
@@ -59,11 +64,11 @@ public class SorgumTest {
     }
 
     /**
-       Check that we can annotate sorgum with SMART.  This is
+       Check that we can annotate sorghum with SMART.  This is
        fairly fast.
-    */
     @Test
-	public void searchSorgumPSSM() throws Exception {
+    */
+	public void searchSorghumPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -74,23 +79,23 @@ public class SorgumTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       smartRef,
-						       sorgumRef);
+						       sorghumRef);
 
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("SMART-sorgum")
+						  .withName("SMART-sorghum")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
     }
 
     /**
-       Check that we can annotate sorgum with TIGRFAMs.  Takes ~12 min
+       Check that we can annotate sorghum with TIGRFAMs.  Takes ~12 min
        on a 2-CPU Magellan instance.
     */
     @Test
-	public void searchSorgumHMM() throws Exception {
+	public void searchSorghumHMM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -101,14 +106,14 @@ public class SorgumTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       tigrRef,
-						       sorgumRef);
+						       sorghumRef);
 
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-sorgum")
+						  .withName("TIGR-sorghum")
 						  .withData(new UObject(results)))));
     }
 
