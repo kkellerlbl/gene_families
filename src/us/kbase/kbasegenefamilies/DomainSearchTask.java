@@ -391,11 +391,9 @@ public class DomainSearchTask {
 	    return rv;
 	}
 	finally {
-	    /*
 	    try { fastaFile.delete(); } catch (Exception ignore) {}
 	    if (outFile != null)
 		try { outFile.delete(); } catch (Exception ignore) {}
-	    */
 	}
     }
 

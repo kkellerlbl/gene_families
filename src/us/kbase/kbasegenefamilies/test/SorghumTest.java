@@ -64,10 +64,10 @@ public class SorghumTest {
     }
 
     /**
-       Check that we can annotate sorghum with SMART.  This is
-       fairly fast.
-    @Test
+       Check that we can annotate sorghum with SMART.  This takes less
+       than 10 minutes on a 2-CPU Magellan instance.
     */
+    @Test
 	public void searchSorghumPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -81,6 +81,7 @@ public class SorghumTest {
 						       smartRef,
 						       sorghumRef);
 
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
@@ -88,13 +89,14 @@ public class SorghumTest {
 						  .withName("SMART-sorghum")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
+	*/
     }
 
     /**
-       Check that we can annotate sorghum with TIGRFAMs.  Takes ~12 min
+       Check that we can annotate sorghum with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
-    */
     @Test
+    */
 	public void searchSorghumHMM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -108,6 +110,7 @@ public class SorghumTest {
 						       tigrRef,
 						       sorghumRef);
 
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
@@ -115,6 +118,7 @@ public class SorghumTest {
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withName("TIGR-sorghum")
 						  .withData(new UObject(results)))));
+	*/
     }
 
     /**
