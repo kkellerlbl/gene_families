@@ -31,6 +31,7 @@
     <include name="jackson/jackson-core-2.2.3.jar"/>
     <include name="jackson/jackson-databind-2.2.3.jar"/>
     <include name="kbase/kbase-common-temp.jar" />
+    <include name="kbase/shock/shock-client-0.0.8.jar" />
     <include name="kbase/workspace/WorkspaceClient-0.2.0.jar"/>
     <include name="kbase/genomes/kbase-genomes-20140411.jar"/>
     <include name="apache_commons/commons-logging-1.1.1.jar"/>
@@ -42,13 +43,8 @@
     <include name="apache_commons/commons-lang3-3.1.jar"/>
   </fileset>
 
-  <fileset dir="${dist}" id="serverlib2">
-    <include name="shock-client-0.0.8.jar"/>
-  </fileset>
-
   <path id="compile.classpath">
     <fileset refid="serverlib"/>
-    <fileset refid="serverlib2"/>
   </path>
 
   <path id="test.classpath">
@@ -78,7 +74,6 @@
     </copy>
     <unzip dest="${classes}">
         <fileset refid="serverlib"/>
-        <fileset refid="serverlib2"/>
     </unzip>
     <jar destfile="${dist}/${jar.file}" basedir="${classes}">
       <manifest>
@@ -98,7 +93,6 @@
     <mkdir dir="${war.lib}"/>
     <copy todir="${war.lib}/" flatten="true">
       <fileset refid="serverlib"/>
-      <fileset refid="serverlib2"/>
       <resources>
         <file file="${dist}/${jar.file}"/>
       </resources>
