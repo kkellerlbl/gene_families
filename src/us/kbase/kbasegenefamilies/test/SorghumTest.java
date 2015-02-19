@@ -81,7 +81,6 @@ public class SorghumTest {
 						       smartRef,
 						       sorghumRef);
 
-	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
@@ -89,7 +88,6 @@ public class SorghumTest {
 						  .withName("SMART-sorghum")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
-	*/
     }
 
     /**
