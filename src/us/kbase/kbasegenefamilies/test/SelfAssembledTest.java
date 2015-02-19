@@ -20,27 +20,28 @@ import us.kbase.kbasegenefamilies.*;
 import us.kbase.common.taskqueue.TaskQueueConfig;
 
 /**
-   Tests for setting up sample db and annotating Sorghum locally
+   Tests for setting up sample db and annotating a self-assembled
+   genome locally
 */
-public class SorghumTest {
-    private static final String genomeWsName = "KBaseExampleData";
+public class SelfAssembledTest {
+    private static final String genomeWsName = "jmc:1424372471527";
     private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String privateWsName = "jmc:gene_domains_test";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String sorghumRef = genomeWsName+"/Sbicolor.JGI-v2.1";
+    private static final String genomeRef = genomeWsName+"/genome";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
     /**
-       check that we can read sorghum genome from WS
+       check that we can read genome from WS
     */
-    @Test public void getSorghum() throws Exception {
+    @Test public void getGenome() throws Exception {
 	Genome genome = null;
 	
 	System.out.println("Reading genome from WS");
-	WorkspaceClient wc = createWsClient(null);
-	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(sorghumRef))).get(0).getData().asClassInstance(Genome.class);
+	WorkspaceClient wc = createWsClient(getDevToken());
+	genome = wc.getObjects(Arrays.asList(new ObjectIdentity().withRef(genomeRef))).get(0).getData().asClassInstance(Genome.class);
 
 	// save copy for debugging:
 	// ObjectMapper mapper = new ObjectMapper();
@@ -48,7 +49,7 @@ public class SorghumTest {
 	// mapper.writeValue(f,genome);
 	
 	System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "Sorghum bicolor");
+	assertEquals(genome.getScientificName(), "c c c");
     }
 
     /**
@@ -64,11 +65,11 @@ public class SorghumTest {
     }
 
     /**
-       Check that we can annotate sorghum with SMART.  This takes less
+       Check that we can annotate genome with SMART.  This takes less
        than 10 minutes on a 2-CPU Magellan instance.
     */
     @Test
-	public void searchSorghumPSSM() throws Exception {
+	public void searchGenomePSSM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -79,23 +80,23 @@ public class SorghumTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       smartRef,
-						       sorghumRef);
+						       genomeRef);
 
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("SMART-sorghum")
+						  .withName("SMART-genome")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
     }
 
     /**
-       Check that we can annotate sorghum with TIGRFAMs.  Takes ~100 min
+       Check that we can annotate genome with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
     @Test
     */
-	public void searchSorghumHMM() throws Exception {
+	public void searchGenomeHMM() throws Exception {
 
 	AuthToken token = getDevToken();
 	WorkspaceClient wc = createWsClient(token);
@@ -106,7 +107,7 @@ public class SorghumTest {
 	
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       tigrRef,
-						       sorghumRef);
+						       genomeRef);
 
 	/*
 	wc.saveObjects(new SaveObjectsParams()
@@ -114,7 +115,7 @@ public class SorghumTest {
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-sorghum")
+						  .withName("TIGR-genome")
 						  .withData(new UObject(results)))));
 	*/
     }

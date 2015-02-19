@@ -226,14 +226,24 @@ public class DomainSearchTask {
 
 	    // make contig-based indices
 	    HashMap<String,Long> contigLengths = new HashMap<String,Long>();
-	    for (int contigPos = 0; contigPos < genome.getContigIds().size(); contigPos++) {
-		String contigId = genome.getContigIds().get(contigPos);
+
+	    // first, get the reported contigs from genome object
+	    List<String> genomeContigs = genome.getContigIds();
+	    List<Long> genomeContigLengths = genome.getContigLengths();
+	    int nContigs = 0;
+	    if (genomeContigs != null)
+		nContigs = genomeContigs.size();
+	    for (int contigPos = 0; contigPos < nContigs; contigPos++) {
+		String contigId = genomeContigs.get(contigPos);
 		if (!contig2prots.containsKey(contigId))
 		    continue;
-		long contigLength = genome.getContigLengths().get(contigPos);
+		long contigLength = 1;
+		if ((genomeContigLengths != null) &&
+		    (genomeContigLengths.size() > contigPos))
+		    contigLength = genomeContigLengths.get(contigPos).longValue();
 		contigLengths.put(contigId, new Long(contigLength));
 	    }
-	    // add missing contigs as length 1
+	    // next, add any missing contigs as length 1
 	    for (String contigId : realContigs) {
 		if (contigLengths.get(contigId) == null)
 		    contigLengths.put(contigId, new Long(1));
