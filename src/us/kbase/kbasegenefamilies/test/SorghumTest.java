@@ -66,8 +66,8 @@ public class SorghumTest {
     /**
        Check that we can annotate sorghum with SMART.  This takes less
        than 10 minutes on a 2-CPU Magellan instance.
+       @Test
     */
-    @Test
 	public void searchSorghumPSSM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -81,6 +81,7 @@ public class SorghumTest {
 						       smartRef,
 						       sorghumRef);
 
+	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
@@ -88,6 +89,7 @@ public class SorghumTest {
 						  .withName("SMART-sorghum")
 						  .withMeta(DomainSearchTask.getMetadata(results))
 						  .withData(new UObject(results)))));
+	*/
     }
 
     /**
