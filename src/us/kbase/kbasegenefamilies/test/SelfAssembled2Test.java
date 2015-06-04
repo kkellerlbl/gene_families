@@ -23,13 +23,12 @@ import us.kbase.common.taskqueue.TaskQueueConfig;
    Tests for setting up sample db and annotating a self-assembled
    genome locally
 */
-public class SelfAssembledTest {
-    private static final String genomeWsName = "jmc:1424372471527";
-    private static final String domainWsName = "KBasePublicGeneDomains";
+public class SelfAssembled2Test {
     private static final String privateWsName = "jmc:gene_domains_test";
+    private static final String domainWsName = "KBasePublicGeneDomains";
     private static final String domainModelSetType = "KBaseGeneFamilies.DomainModelSet";
     private static final String domainAnnotationType = "KBaseGeneFamilies.DomainAnnotation";
-    private static final String genomeRef = genomeWsName+"/genome";
+    private static final String genomeRef = privateWsName+"/genome2";
     private static final String smartRef = domainWsName+"/SMART-only";
     private static final String tigrRef = domainWsName+"/TIGRFAMs-only";
 
@@ -49,7 +48,7 @@ public class SelfAssembledTest {
 	// mapper.writeValue(f,genome);
 	
 	// System.out.println(genome.getScientificName());
-	assertEquals(genome.getScientificName(), "c c c");
+	assertEquals(genome.getScientificName(), "Desulfovibrio frigidus DSM 17176");
     }
 
     /**
@@ -86,16 +85,16 @@ public class SelfAssembledTest {
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
-						  .withName("SMART-genome")
 						  .withMeta(DomainSearchTask.getMetadata(results))
+						  .withName("SMART-genome2")
 						  .withData(new UObject(results)))));
     }
 
     /**
        Check that we can annotate genome with TIGRFAMs.  Takes ~100 min
        on a 2-CPU Magellan instance.
-    @Test
     */
+    @Test
 	public void searchGenomeHMM() throws Exception {
 
 	AuthToken token = getDevToken();
@@ -108,16 +107,13 @@ public class SelfAssembledTest {
 	DomainAnnotation results = dst.runDomainSearch(token.toString(),
 						       tigrRef,
 						       genomeRef);
-
-	/*
 	wc.saveObjects(new SaveObjectsParams()
 		       .withWorkspace(privateWsName)
 		       .withObjects(Arrays.asList(new ObjectSaveData()
 						  .withType(domainAnnotationType)
 						  .withMeta(DomainSearchTask.getMetadata(results))
-						  .withName("TIGR-genome")
+						  .withName("TIGR-genome2")
 						  .withData(new UObject(results)))));
-	*/
     }
 
     /**
